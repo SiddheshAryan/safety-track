@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Select Role</title>
+
+<link rel="stylesheet" href="style.css">
+
+<style>
+
+.role-container{
+display:flex;
+gap:30px;
+justify-content:center;
+margin-top:40px;
+}
+
+.role-card{
+background:white;
+padding:30px;
+border-radius:12px;
+box-shadow:0 6px 18px rgba(0,0,0,0.15);
+width:200px;
+text-align:center;
+cursor:pointer;
+}
+
+.role-card:hover{
+transform:scale(1.05);
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="page-center">
+
+<div class="main-card">
+
+<h2>Select Role</h2>
+
+<div class="role-container">
+
+<div class="role-card" onclick="goTo('student')">
+🎓
+<h3>Student</h3>
+</div>
+
+<div class="role-card" onclick="goTo('parent')">
+👨‍👩‍👦
+<h3>Parent</h3>
+</div>
+
+<div class="role-card" onclick="goTo('faculty')">
+👨‍🏫
+<h3>Faculty</h3>
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+<script>
+
+function goTo(role){
+
+const mode = new URLSearchParams(window.location.search).get("mode");
+
+if(mode === "login"){
+window.location.href = `login.html?role=${role}`;
+}
+
+if(mode === "register"){
+
+if(role === "student") window.location.href="register-student.html";
+
+if(role === "parent") window.location.href="register-parent.html";
+
+if(role === "faculty") window.location.href="register-faculty.html";
+
+}
+
+}
+
+</script>
+
+</body>
+</html>
