@@ -2,104 +2,73 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Faculty Registration</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
-
-*{
-box-sizing:border-box;
-}
 
 body{
 margin:0;
 font-family:Arial, Helvetica, sans-serif;
-min-height:100vh;
+background:linear-gradient(135deg,#b8e3d3,#c5ddf0);
 display:flex;
 justify-content:center;
 align-items:center;
-background:linear-gradient(135deg,#b8e3d3,#c5ddf0);
-padding:20px;
+min-height:100vh;
 }
 
-.container{
-width:100%;
-max-width:520px;
-background:rgba(255,255,255,0.75);
-backdrop-filter:blur(16px);
-border-radius:28px;
+.card{
+background:white;
 padding:40px;
-box-shadow:0 20px 50px rgba(0,0,0,0.15);
+border-radius:22px;
+box-shadow:0 18px 45px rgba(0,0,0,0.15);
+width:450px;
 }
 
-.title{
+h2{
 text-align:center;
-font-size:32px;
-font-weight:800;
 color:#055f6b;
-margin-bottom:8px;
-}
-
-.subtitle{
-text-align:center;
-color:#4a6770;
-margin-bottom:30px;
-}
-
-label{
-font-weight:700;
-display:block;
-margin-bottom:6px;
-color:#123a47;
+margin-bottom:25px;
 }
 
 input{
 width:100%;
-padding:13px;
-margin-bottom:18px;
-border-radius:12px;
-border:1px solid #ddd;
-font-size:15px;
-outline:none;
-}
-
-input:focus{
-border-color:#4c8ed9;
-box-shadow:0 0 0 4px rgba(76,142,217,0.15);
+padding:12px;
+margin-bottom:15px;
+border-radius:10px;
+border:1px solid #ccc;
 }
 
 button{
 width:100%;
 padding:14px;
 border:none;
-border-radius:14px;
-font-weight:700;
-background:linear-gradient(135deg,#4c8ed9,#2f6fb8);
+border-radius:12px;
+background:#2f6fb8;
 color:white;
+font-weight:bold;
 cursor:pointer;
-font-size:16px;
-box-shadow:0 12px 24px rgba(76,142,217,0.28);
 }
 
 button:hover{
-transform:translateY(-2px);
+background:#1e4e86;
 }
 
 .back{
 display:block;
 text-align:center;
-margin-top:16px;
-text-decoration:none;
+margin-top:15px;
 color:#2f6fb8;
-font-weight:700;
+text-decoration:none;
+font-weight:bold;
 }
 
 .footer{
 position:fixed;
-bottom:12px;
+bottom:10px;
 width:100%;
 text-align:center;
-font-weight:700;
+font-weight:bold;
 color:#1a4655;
 }
 
@@ -108,68 +77,31 @@ color:#1a4655;
 
 <body>
 
-<div class="container">
+<div class="card">
 
-<div class="title">Faculty Registration</div>
-<div class="subtitle">Create a faculty account</div>
+<h2>Faculty Registration</h2>
 
 <form action="/register-faculty" method="POST">
 
-<label>Faculty ID</label>
-<input
-type="text"
-name="faculty_id"
-placeholder="Enter Faculty ID"
-required
->
+<input name="faculty_id" placeholder="Faculty ID" required>
 
-<label>Faculty Name</label>
-<input
-type="text"
-name="name"
-placeholder="Enter Faculty Name"
-required
->
+<input name="name" placeholder="Faculty Name" required>
 
-<label>Department / Subject</label>
-<input
-type="text"
-name="department"
-placeholder="Example: Computer Science"
-required
->
+<input name="department" placeholder="Department">
 
-<label>Mobile Number</label>
-<input
-type="text"
-name="mobile"
-placeholder="Enter Mobile Number"
-required
->
+<input name="mobile" placeholder="Mobile Number">
 
-<label>Password</label>
-<input
-type="password"
-name="password"
-placeholder="Create Password"
-required
->
+<input type="password" name="password" placeholder="Password" required>
 
-<button type="submit">
-Register Faculty
-</button>
+<button type="submit">Register Faculty</button>
 
 </form>
 
-<a class="back" href="/select-role.html?mode=register">
-Back
-</a>
+<a class="back" href="/select-role.html?mode=register">Back</a>
 
 </div>
 
-<div class="footer">
-Designed by R Siddhesh Aryan
-</div>
+<div class="footer">Designed by R Siddhesh Aryan</div>
 
 </body>
 </html>
