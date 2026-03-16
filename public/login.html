@@ -1,120 +1,111 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Login</title>
-  <link rel="stylesheet" href="style.css" />
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Login</title>
+
+<style>
+
+body{
+margin:0;
+font-family:Arial, Helvetica, sans-serif;
+min-height:100vh;
+display:flex;
+align-items:center;
+justify-content:center;
+background:linear-gradient(135deg,#b8e3d3,#c5ddf0);
+}
+
+.login-container{
+width:420px;
+background:rgba(255,255,255,0.75);
+backdrop-filter:blur(16px);
+border-radius:26px;
+padding:40px;
+box-shadow:0 18px 45px rgba(0,0,0,0.15);
+text-align:center;
+}
+
+.login-title{
+font-size:32px;
+font-weight:800;
+color:#055f6b;
+margin-bottom:10px;
+}
+
+.login-subtitle{
+color:#4a6770;
+margin-bottom:30px;
+}
+
+input{
+width:100%;
+padding:12px;
+margin-bottom:18px;
+border-radius:12px;
+border:1px solid #ddd;
+font-size:15px;
+}
+
+button{
+width:100%;
+padding:14px;
+border:none;
+border-radius:14px;
+font-weight:700;
+background:linear-gradient(135deg,#4c8ed9,#2f6fb8);
+color:white;
+cursor:pointer;
+font-size:16px;
+}
+
+button:hover{
+transform:translateY(-2px);
+}
+
+.back{
+display:inline-block;
+margin-top:18px;
+text-decoration:none;
+color:#2f6fb8;
+font-weight:600;
+}
+
+.footer{
+position:fixed;
+bottom:12px;
+width:100%;
+text-align:center;
+font-weight:700;
+color:#1a4655;
+}
+
+</style>
 </head>
+
 <body>
-  <div class="page-center">
-    <div class="card slide-in">
-      <h2 class="page-title" style="text-align:center; margin-bottom: 10px;">Login</h2>
-      <p class="page-subtitle" id="roleSubtitle" style="text-align:center; margin-bottom: 22px;">
-        Continue with your selected role.
-      </p>
 
-      <form id="loginForm">
-        <label for="roleDisplay">Role</label>
-        <input type="text" id="roleDisplay" readonly />
+<div class="login-container">
 
-        <input type="hidden" id="role" />
+<div class="login-title">Login</div>
+<div class="login-subtitle">Enter your credentials</div>
 
-        <div id="studentParentFields">
-          <label for="roll">Roll Number / Child Roll Number</label>
-          <input type="text" id="roll" placeholder="Enter roll number" />
-        </div>
+<form action="/login" method="POST">
 
-        <div id="facultyFields" style="display:none;">
-          <label for="facultyName">Faculty Name</label>
-          <input type="text" id="facultyName" placeholder="Enter faculty name" />
-        </div>
+<input type="text" name="username" placeholder="Enter Username" required>
 
-        <button type="submit">Continue</button>
-      </form>
+<input type="password" name="password" placeholder="Enter Password" required>
 
-      <div class="button-row" style="margin-top: 16px;">
-        <a href="select-role.html?mode=login" class="secondary-btn">Change Role</a>
-      </div>
+<button type="submit">Login</button>
 
-      <p class="message" id="loginMessage" style="text-align:center;"></p>
-    </div>
-  </div>
+</form>
 
-  <div class="footer-credit">Designed by R Siddhesh Aryan</div>
+<a class="back" href="/index.html">Back</a>
 
-  <script>
-    const params = new URLSearchParams(window.location.search);
-    const selectedRole = (params.get("role") || "").toLowerCase();
+</div>
 
-    const roleInput = document.getElementById("role");
-    const roleDisplay = document.getElementById("roleDisplay");
-    const roleSubtitle = document.getElementById("roleSubtitle");
-    const loginMessage = document.getElementById("loginMessage");
+<div class="footer">Designed by R Siddhesh Aryan</div>
 
-    const studentParentFields = document.getElementById("studentParentFields");
-    const facultyFields = document.getElementById("facultyFields");
-    const rollInput = document.getElementById("roll");
-    const facultyNameInput = document.getElementById("facultyName");
-
-    function capitalize(word) {
-      return word ? word.charAt(0).toUpperCase() + word.slice(1) : "";
-    }
-
-    if (!["student", "parent", "faculty"].includes(selectedRole)) {
-      window.location.href = "select-role.html?mode=login";
-    }
-
-    roleInput.value = selectedRole;
-    roleDisplay.value = capitalize(selectedRole);
-    roleSubtitle.textContent = `Login as ${capitalize(selectedRole)}.`;
-
-    if (selectedRole === "faculty") {
-      studentParentFields.style.display = "none";
-      facultyFields.style.display = "block";
-      rollInput.removeAttribute("required");
-      facultyNameInput.setAttribute("required", "required");
-    } else {
-      studentParentFields.style.display = "block";
-      facultyFields.style.display = "none";
-      rollInput.setAttribute("required", "required");
-      facultyNameInput.removeAttribute("required");
-    }
-
-    document.getElementById("loginForm").addEventListener("submit", function (e) {
-      e.preventDefault();
-
-      const role = roleInput.value;
-
-      if (role === "student") {
-        const roll = rollInput.value.trim();
-        if (!roll) {
-          loginMessage.textContent = "Please enter roll number.";
-          return;
-        }
-        window.location.href = `student.html?roll=${encodeURIComponent(roll)}`;
-        return;
-      }
-
-      if (role === "parent") {
-        const roll = rollInput.value.trim();
-        if (!roll) {
-          loginMessage.textContent = "Please enter child roll number.";
-          return;
-        }
-        window.location.href = `parent.html?roll=${encodeURIComponent(roll)}`;
-        return;
-      }
-
-      if (role === "faculty") {
-        const facultyName = facultyNameInput.value.trim();
-        if (!facultyName) {
-          loginMessage.textContent = "Please enter faculty name.";
-          return;
-        }
-        window.location.href = `faculty.html?name=${encodeURIComponent(facultyName)}`;
-      }
-    });
-  </script>
 </body>
 </html>
