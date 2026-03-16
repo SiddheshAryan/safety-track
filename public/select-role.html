@@ -3,24 +3,64 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Safety Tracker</title>
-  <link rel="stylesheet" href="style.css" />
+  <title>Select Role</title>
+  <link rel="stylesheet" href="/style.css" />
 </head>
 <body>
   <div class="page-center">
     <div class="main-card fade-in">
-      <h1 class="brand-title">Safety Tracker</h1>
+      <h1 class="brand-title">Select Role</h1>
       <p class="brand-subtitle">
-        A smart system that allows parents and faculty to track student safety and location in real time.
+        Choose your role to continue.
       </p>
 
-      <div class="hero-buttons">
-        <a href="select-role.html?mode=login" class="primary-btn">Login</a>
-        <a href="select-role.html?mode=register" class="secondary-btn">Register</a>
+      <div class="role-grid">
+        <div class="role-card" onclick="goToRole('student')">
+          <div class="role-icon">🎓</div>
+          <h3>Student</h3>
+          <p>Track and share live location.</p>
+        </div>
+
+        <div class="role-card" onclick="goToRole('parent')">
+          <div class="role-icon">👨‍👩‍👦</div>
+          <h3>Parent</h3>
+          <p>Monitor your child in real time.</p>
+        </div>
+
+        <div class="role-card" onclick="goToRole('faculty')">
+          <div class="role-icon">👨‍🏫</div>
+          <h3>Faculty</h3>
+          <p>Manage faculty access.</p>
+        </div>
+      </div>
+
+      <div class="button-row" style="margin-top: 24px;">
+        <a href="/index.html" class="secondary-btn">Back</a>
       </div>
     </div>
   </div>
 
   <div class="footer-credit">Designed by R Siddhesh Aryan</div>
+
+  <script>
+    function goToRole(role) {
+      const params = new URLSearchParams(window.location.search);
+      const mode = params.get("mode");
+
+      if (mode === "login") {
+        window.location.href = `/login.html?role=${encodeURIComponent(role)}`;
+        return;
+      }
+
+      if (mode === "register") {
+        if (role === "student") window.location.href = "/register-student.html";
+        if (role === "parent") window.location.href = "/register-parent.html";
+        if (role === "faculty") window.location.href = "/register-faculty.html";
+        return;
+      }
+
+      window.location.href = "/index.html";
+    }
+  </script>
 </body>
 </html>
