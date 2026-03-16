@@ -1,60 +1,120 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Login</title>
-<link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Login</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
-
 <body>
+  <div class="page-center">
+    <div class="card slide-in">
+      <h2 class="page-title" style="text-align:center; margin-bottom: 10px;">Login</h2>
+      <p class="page-subtitle" id="roleSubtitle" style="text-align:center; margin-bottom: 22px;">
+        Continue with your selected role.
+      </p>
 
-<div class="card">
+      <form id="loginForm">
+        <label for="roleDisplay">Role</label>
+        <input type="text" id="roleDisplay" readonly />
 
-<h2>Login</h2>
+        <input type="hidden" id="role" />
 
-<form id="loginForm">
+        <div id="studentParentFields">
+          <label for="roll">Roll Number / Child Roll Number</label>
+          <input type="text" id="roll" placeholder="Enter roll number" />
+        </div>
 
-<select id="role" required>
-<option value="">Select Role</option>
-<option value="student">Student</option>
-<option value="parent">Parent</option>
-<option value="faculty">Faculty</option>
-</select>
+        <div id="facultyFields" style="display:none;">
+          <label for="facultyName">Faculty Name</label>
+          <input type="text" id="facultyName" placeholder="Enter faculty name" />
+        </div>
 
-<input type="text" id="roll" placeholder="Roll Number / Child Roll" required>
+        <button type="submit">Continue</button>
+      </form>
 
-<button type="submit">Login</button>
+      <div class="button-row" style="margin-top: 16px;">
+        <a href="select-role.html?mode=login" class="secondary-btn">Change Role</a>
+      </div>
 
-</form>
+      <p class="message" id="loginMessage" style="text-align:center;"></p>
+    </div>
+  </div>
 
-</div>
+  <div class="footer-credit">Designed by R Siddhesh Aryan</div>
 
-<script>
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const selectedRole = (params.get("role") || "").toLowerCase();
 
-document.getElementById("loginForm").addEventListener("submit",function(e){
+    const roleInput = document.getElementById("role");
+    const roleDisplay = document.getElementById("roleDisplay");
+    const roleSubtitle = document.getElementById("roleSubtitle");
+    const loginMessage = document.getElementById("loginMessage");
 
-e.preventDefault();
+    const studentParentFields = document.getElementById("studentParentFields");
+    const facultyFields = document.getElementById("facultyFields");
+    const rollInput = document.getElementById("roll");
+    const facultyNameInput = document.getElementById("facultyName");
 
-const role=document.getElementById("role").value;
+    function capitalize(word) {
+      return word ? word.charAt(0).toUpperCase() + word.slice(1) : "";
+    }
 
-const roll=document.getElementById("roll").value;
+    if (!["student", "parent", "faculty"].includes(selectedRole)) {
+      window.location.href = "select-role.html?mode=login";
+    }
 
-if(role==="student"){
-window.location.href=`student.html?roll=${roll}`;
-}
+    roleInput.value = selectedRole;
+    roleDisplay.value = capitalize(selectedRole);
+    roleSubtitle.textContent = `Login as ${capitalize(selectedRole)}.`;
 
-if(role==="parent"){
-window.location.href=`parent.html?roll=${roll}`;
-}
+    if (selectedRole === "faculty") {
+      studentParentFields.style.display = "none";
+      facultyFields.style.display = "block";
+      rollInput.removeAttribute("required");
+      facultyNameInput.setAttribute("required", "required");
+    } else {
+      studentParentFields.style.display = "block";
+      facultyFields.style.display = "none";
+      rollInput.setAttribute("required", "required");
+      facultyNameInput.removeAttribute("required");
+    }
 
-if(role==="faculty"){
-window.location.href=`faculty.html`;
-}
+    document.getElementById("loginForm").addEventListener("submit", function (e) {
+      e.preventDefault();
 
-});
+      const role = roleInput.value;
 
-</script>
+      if (role === "student") {
+        const roll = rollInput.value.trim();
+        if (!roll) {
+          loginMessage.textContent = "Please enter roll number.";
+          return;
+        }
+        window.location.href = `student.html?roll=${encodeURIComponent(roll)}`;
+        return;
+      }
 
+      if (role === "parent") {
+        const roll = rollInput.value.trim();
+        if (!roll) {
+          loginMessage.textContent = "Please enter child roll number.";
+          return;
+        }
+        window.location.href = `parent.html?roll=${encodeURIComponent(roll)}`;
+        return;
+      }
+
+      if (role === "faculty") {
+        const facultyName = facultyNameInput.value.trim();
+        if (!facultyName) {
+          loginMessage.textContent = "Please enter faculty name.";
+          return;
+        }
+        window.location.href = `faculty.html?name=${encodeURIComponent(facultyName)}`;
+      }
+    });
+  </script>
 </body>
 </html>
