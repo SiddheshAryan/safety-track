@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Parent Dashboard</title>
+  <link rel="stylesheet" href="style.css" />
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+  />
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+</head>
+<body>
+  <div style="width: 100%; max-width: 1100px; padding: 20px;">
+    <div class="dashboard" style="width: 100%; box-sizing: border-box;">
+      <h2>Parent Dashboard</h2>
+      <p id="childRollText"></p>
+      <p id="parentStatusText" style="color:#444; margin-bottom: 20px;">Waiting for location...</p>
+      <div id="map" class="map-container" style="border-radius: 12px; overflow: hidden;"></div>
+    </div>
+  </div>
+
+  <script>
+    const socket = io();
+
+    const params = new URLSearchParams(window.location.search);
+    const roll = params.get("roll");
+
+    const childRollText = document.getElementById("childRollText");
+    const parentStatusText = document.getElementById("parentStatusText");
+
+    if (!roll) {
+      childRollText.textContent = "No child roll number found. Please login again.";
+      parentStatusText.textContent = "Tracking unavailable.";
+    } else {
+      childRollText.textContent = `Tracking Roll Number: ${roll}`;
+    }
+
+    const map = L.map("map").setView([20.5937, 78.9629], 5);
+
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      maxZoom: 19,
+      attribution: "&copy; OpenStreetMap contributors"
+    }).addTo(map);
+
+    let startMarker = null;
+    let currentMarker = null;
+    let stopMarker = null;
+    let routeLine = null;
+    let routePoints = [];
+
+    const startIcon = L.divIcon({
+      className: "",
+      html: `
+        <div style="
+          width:18px;
+          height:18px;
+          background:#ff3b30;
+          border:3px solid white;
+          border-radius:50%;
+          box-shadow:0 0 10px rgba(0,0,0,0.35);
+        "></div>
+      `,
+      iconSize: [18, 18],
+      iconAnchor: [9, 9]
+    });
+
+    const currentIcon = L.divIcon({
+      className: "",
+      html: `
+        <div style="
+          width:18px;
+          height:18px;
+          background:#007aff;
+          border:3px solid white;
+          border-radius:50%;
+          box-shadow:0 0 10px rgba(0,0,0,0.35);
+        "></div>
+      `,
+      iconSize: [18, 18],
+      iconAnchor: [9, 9]
+    });
+
+    const stopIcon = L.divIcon({
+      className: "",
+      html: `
+        <div style="
+          width:18px;
+          height:18px;
+          background:#34c759;
+          border:3px solid white;
+          border-radius:50%;
+          box-shadow:0 0 10px rgba(0,0,0,0.35);
+        "></div>
+      `,
+      iconSize: [18, 18],
+      iconAnchor: [9, 9]
+    });
+
+    function drawRoute() {
+      if (routeLine) {
+        map.removeLayer(routeLine);
+      }
+
+      routeLine = L.polyline(routePoints, {
+        color: "blue",
+        weight: 5,
+        opacity: 0.8
+      }).addTo(map);
+    }
+
+    function updateMapPoint(lat, lng, status) {
+      const point = [lat, lng];
+
+      if (status === "start") {
+        if (startMarker) {
+          map.removeLayer(startMarker);
+        }
+
+        startMarker = L.marker(point, { icon: startIcon }).addTo(map)
+          .bindPopup("Start Location");
+
+        routePoints = [point];
+        drawRoute();
+
+        if (currentMarker) {
+          map.removeLayer(currentMarker);
+          currentMarker = null;
+        }
+
+        if (stopMarker) {
+          map.removeLayer(stopMarker);
+          stopMarker = null;
+        }
+
+        parentStatusText.textContent = "Tracking started.";
+        map.setView(point, 18);
+        return;
+      }
+
+      if (status === "tracking") {
+        routePoints.push(point);
+        drawRoute();
+
+        if (currentMarker) {
+          map.removeLayer(currentMarker);
+        }
+
+        currentMarker = L.marker(point, { icon: currentIcon }).addTo(map)
+          .bindPopup("Current Location");
+
+        parentStatusText.textContent = "Live tracking in progress...";
+        map.setView(point, 18);
+        return;
+      }
+
+      if (status === "stop") {
+        routePoints.push(point);
+        drawRoute();
+
+        if (currentMarker) {
+          map.removeLayer(currentMarker);
+          currentMarker = null;
+        }
+
+        if (stopMarker) {
+          map.removeLayer(stopMarker);
+        }
+
+        stopMarker = L.marker(point, { icon: stopIcon }).addTo(map)
+          .bindPopup("Stop Location");
+
+        parentStatusText.textContent = "Tracking stopped.";
+        map.setView(point, 18);
+      }
+    }
+
+    async function loadPreviousHistory() {
+      if (!roll) return;
+
+      try {
+        const response = await fetch(`/location-history/${roll}`);
+        const result = await response.json();
+
+        if (!result.success || !result.data || result.data.length === 0) {
+          parentStatusText.textContent = "No location history found yet.";
+          return;
+        }
+
+        for (const item of result.data) {
+          updateMapPoint(item.latitude, item.longitude, item.status);
+        }
+      } catch (error) {
+        parentStatusText.textContent = "Could not load location history.";
+      }
+    }
+
+    if (roll) {
+      socket.emit("joinParentRoom", roll);
+
+      socket.on("locationReceive", (data) => {
+        if (data.roll !== roll) return;
+        updateMapPoint(data.lat, data.lng, data.status);
+      });
+
+      loadPreviousHistory();
+    }
+  </script>
+</body>
+</html>
