@@ -3,23 +3,39 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Register Parent</title>
+  <title>Parent Registration</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <div class="card">
-    <h2>Parent Registration</h2>
+  <div class="page-center">
+    <div class="card slide-in">
+      <h2 class="page-title" style="text-align:center; margin-bottom: 10px;">Parent Registration</h2>
+      <p class="page-subtitle" style="text-align:center; margin-bottom: 22px;">
+        Register a parent profile to monitor a student in real time.
+      </p>
 
-    <form id="parentRegisterForm">
-      <input type="text" id="name" placeholder="Parent Name" required />
-      <input type="text" id="child_roll" placeholder="Child Roll Number" required />
-      <input type="text" id="mobile" placeholder="Mobile Number" required />
+      <form id="parentRegisterForm">
+        <label for="name">Parent Name</label>
+        <input type="text" id="name" placeholder="Enter parent name" required />
 
-      <button type="submit">Register Parent</button>
-    </form>
+        <label for="child_roll">Child Roll Number</label>
+        <input type="text" id="child_roll" placeholder="Enter child roll number" required />
 
-    <p id="message" style="margin-top:15px; color:#333;"></p>
+        <label for="mobile">Mobile Number</label>
+        <input type="text" id="mobile" placeholder="Enter mobile number" required />
+
+        <button type="submit">Register Parent</button>
+      </form>
+
+      <div class="button-row" style="margin-top: 16px;">
+        <a href="select-role.html?mode=register" class="secondary-btn">Back</a>
+      </div>
+
+      <p id="message" class="message" style="text-align:center;"></p>
+    </div>
   </div>
+
+  <div class="footer-credit">Designed by R Siddhesh Aryan</div>
 
   <script>
     const form = document.getElementById("parentRegisterForm");
@@ -51,7 +67,7 @@
 
           setTimeout(() => {
             window.location.href = `parent.html?roll=${encodeURIComponent(payload.child_roll)}`;
-          }, 1000);
+          }, 900);
         } else {
           message.textContent = result.message || "Parent registration failed.";
         }
