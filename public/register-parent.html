@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Register Parent</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="card">
+    <h2>Parent Registration</h2>
+
+    <form id="parentRegisterForm">
+      <input type="text" id="name" placeholder="Parent Name" required />
+      <input type="text" id="child_roll" placeholder="Child Roll Number" required />
+      <input type="text" id="mobile" placeholder="Mobile Number" required />
+
+      <button type="submit">Register Parent</button>
+    </form>
+
+    <p id="message" style="margin-top:15px; color:#333;"></p>
+  </div>
+
+  <script>
+    const form = document.getElementById("parentRegisterForm");
+    const message = document.getElementById("message");
+
+    form.addEventListener("submit", async function (e) {
+      e.preventDefault();
+
+      const payload = {
+        name: document.getElementById("name").value.trim(),
+        child_roll: document.getElementById("child_roll").value.trim(),
+        mobile: document.getElementById("mobile").value.trim()
+      };
+
+      try {
+        const response = await fetch("/register/parent", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(payload)
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+          message.textContent = "Parent registered successfully.";
+          form.reset();
+
+          setTimeout(() => {
+            window.location.href = `parent.html?roll=${encodeURIComponent(payload.child_roll)}`;
+          }, 1000);
+        } else {
+          message.textContent = result.message || "Parent registration failed.";
+        }
+      } catch (error) {
+        message.textContent = "Server error. Please try again.";
+      }
+    });
+  </script>
+</body>
+</html>
