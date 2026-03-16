@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Login</title>
+<link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+<div class="card">
+
+<h2>Login</h2>
+
+<form id="loginForm">
+
+<select id="role" required>
+<option value="">Select Role</option>
+<option value="student">Student</option>
+<option value="parent">Parent</option>
+<option value="faculty">Faculty</option>
+</select>
+
+<input type="text" id="roll" placeholder="Roll Number / Child Roll" required>
+
+<button type="submit">Login</button>
+
+</form>
+
+</div>
+
+<script>
+
+document.getElementById("loginForm").addEventListener("submit",function(e){
+
+e.preventDefault();
+
+const role=document.getElementById("role").value;
+
+const roll=document.getElementById("roll").value;
+
+if(role==="student"){
+window.location.href=`student.html?roll=${roll}`;
+}
+
+if(role==="parent"){
+window.location.href=`parent.html?roll=${roll}`;
+}
+
+if(role==="faculty"){
+window.location.href=`faculty.html`;
+}
+
+});
+
+</script>
+
+</body>
+</html>
