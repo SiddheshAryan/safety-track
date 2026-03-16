@@ -5,37 +5,217 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Select Role</title>
   <link rel="stylesheet" href="/style.css" />
+  <style>
+    body {
+      min-height: 100vh;
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      background: linear-gradient(135deg, #b8e3d3 0%, #c5ddf0 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px 16px 72px;
+    }
+
+    .role-page {
+      width: 100%;
+      max-width: 1100px;
+      display: flex;
+      justify-content: center;
+    }
+
+    .role-shell {
+      width: 100%;
+      max-width: 950px;
+      background: rgba(255, 255, 255, 0.72);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.45);
+      box-shadow: 0 18px 50px rgba(16, 55, 72, 0.14);
+      border-radius: 28px;
+      padding: 44px 34px 34px;
+      animation: fadeUp 0.6s ease;
+    }
+
+    .role-title {
+      text-align: center;
+      font-size: 3rem;
+      font-weight: 800;
+      color: #055f6b;
+      margin: 0 0 10px;
+      letter-spacing: -0.03em;
+    }
+
+    .role-subtitle {
+      text-align: center;
+      font-size: 1.05rem;
+      color: #47656d;
+      margin: 0 0 34px;
+    }
+
+    .role-grid-local {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 24px;
+    }
+
+    .role-card-local {
+      background: rgba(255, 255, 255, 0.9);
+      border-radius: 24px;
+      padding: 34px 22px;
+      text-align: center;
+      cursor: pointer;
+      border: 1px solid rgba(120, 170, 190, 0.18);
+      box-shadow: 0 14px 30px rgba(25, 68, 86, 0.08);
+      transition: transform 0.25s ease, box-shadow 0.25s ease, background 0.25s ease;
+    }
+
+    .role-card-local:hover {
+      transform: translateY(-8px);
+      box-shadow: 0 24px 40px rgba(25, 68, 86, 0.16);
+      background: white;
+    }
+
+    .role-emoji {
+      font-size: 2.2rem;
+      margin-bottom: 16px;
+      display: block;
+    }
+
+    .role-name {
+      font-size: 1.65rem;
+      font-weight: 800;
+      color: #123a47;
+      margin: 0 0 10px;
+    }
+
+    .role-text {
+      font-size: 0.98rem;
+      color: #59747c;
+      line-height: 1.5;
+      margin: 0;
+    }
+
+    .role-actions {
+      margin-top: 28px;
+      display: flex;
+      justify-content: center;
+    }
+
+    .back-btn-local {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 150px;
+      padding: 12px 18px;
+      border-radius: 14px;
+      text-decoration: none;
+      font-weight: 700;
+      color: #2e6ea9;
+      background: rgba(255, 255, 255, 0.88);
+      border: 1px solid rgba(76, 142, 217, 0.18);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .back-btn-local:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 24px rgba(25, 68, 86, 0.1);
+    }
+
+    .footer-credit {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 12px;
+      text-align: center;
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: #1a4655;
+    }
+
+    @keyframes fadeUp {
+      from {
+        opacity: 0;
+        transform: translateY(24px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @media (max-width: 900px) {
+      .role-shell {
+        padding: 34px 20px 26px;
+      }
+
+      .role-grid-local {
+        grid-template-columns: 1fr;
+      }
+
+      .role-title {
+        font-size: 2.3rem;
+      }
+
+      .role-card-local {
+        max-width: 420px;
+        width: 100%;
+        margin: 0 auto;
+      }
+    }
+
+    @media (max-width: 480px) {
+      body {
+        padding: 16px 12px 68px;
+      }
+
+      .role-shell {
+        border-radius: 22px;
+        padding: 28px 16px 22px;
+      }
+
+      .role-title {
+        font-size: 2rem;
+      }
+
+      .role-subtitle {
+        font-size: 0.96rem;
+      }
+
+      .role-name {
+        font-size: 1.4rem;
+      }
+    }
+  </style>
 </head>
 <body>
-  <div class="page-center">
-    <div class="main-card fade-in">
-      <h1 class="brand-title">Select Role</h1>
-      <p class="brand-subtitle">
-        Choose your role to continue.
-      </p>
+  <div class="role-page">
+    <div class="role-shell">
+      <h1 class="role-title">Select Role</h1>
+      <p class="role-subtitle">Choose your role to continue.</p>
 
-      <div class="role-grid">
-        <div class="role-card" onclick="goToRole('student')">
-          <div class="role-icon">🎓</div>
-          <h3>Student</h3>
-          <p>Track and share live location.</p>
+      <div class="role-grid-local">
+        <div class="role-card-local" onclick="goToRole('student')">
+          <span class="role-emoji">🎓</span>
+          <h3 class="role-name">Student</h3>
+          <p class="role-text">Track and share live location with smooth real-time monitoring.</p>
         </div>
 
-        <div class="role-card" onclick="goToRole('parent')">
-          <div class="role-icon">👨‍👩‍👦</div>
-          <h3>Parent</h3>
-          <p>Monitor your child in real time.</p>
+        <div class="role-card-local" onclick="goToRole('parent')">
+          <span class="role-emoji">👨‍👩‍👦</span>
+          <h3 class="role-name">Parent</h3>
+          <p class="role-text">View your child’s live route, markers, and movement updates.</p>
         </div>
 
-        <div class="role-card" onclick="goToRole('faculty')">
-          <div class="role-icon">👨‍🏫</div>
-          <h3>Faculty</h3>
-          <p>Manage faculty access.</p>
+        <div class="role-card-local" onclick="goToRole('faculty')">
+          <span class="role-emoji">👨‍🏫</span>
+          <h3 class="role-name">Faculty</h3>
+          <p class="role-text">Access faculty tools and manage safety-tracker features.</p>
         </div>
       </div>
 
-      <div class="button-row" style="margin-top: 24px;">
-        <a href="/index.html" class="secondary-btn">Back</a>
+      <div class="role-actions">
+        <a href="/index.html" class="back-btn-local">Back</a>
       </div>
     </div>
   </div>
