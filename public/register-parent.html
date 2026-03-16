@@ -1,37 +1,40 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+<meta charset="UTF-8">
 <title>Parent Registration</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
 
 body{
-font-family:Arial;
+margin:0;
+font-family:Arial, Helvetica, sans-serif;
 background:linear-gradient(135deg,#b8e3d3,#c5ddf0);
 display:flex;
 justify-content:center;
 align-items:center;
-height:100vh;
+min-height:100vh;
 }
 
 .card{
 background:white;
 padding:40px;
-border-radius:20px;
-box-shadow:0 15px 40px rgba(0,0,0,0.2);
+border-radius:22px;
+box-shadow:0 18px 45px rgba(0,0,0,0.15);
 width:450px;
 }
 
 h2{
 text-align:center;
 color:#055f6b;
+margin-bottom:25px;
 }
 
 input{
 width:100%;
 padding:12px;
-margin-top:10px;
-margin-bottom:18px;
+margin-bottom:15px;
 border-radius:10px;
 border:1px solid #ccc;
 }
@@ -39,16 +42,37 @@ border:1px solid #ccc;
 button{
 width:100%;
 padding:14px;
-background:#2f6fb8;
-color:white;
 border:none;
 border-radius:12px;
+background:#2f6fb8;
+color:white;
 font-weight:bold;
 cursor:pointer;
 }
 
-</style>
+button:hover{
+background:#1e4e86;
+}
 
+.back{
+display:block;
+text-align:center;
+margin-top:15px;
+color:#2f6fb8;
+text-decoration:none;
+font-weight:bold;
+}
+
+.footer{
+position:fixed;
+bottom:10px;
+width:100%;
+text-align:center;
+font-weight:bold;
+color:#1a4655;
+}
+
+</style>
 </head>
 
 <body>
@@ -59,19 +83,23 @@ cursor:pointer;
 
 <form action="/register-parent" method="POST">
 
-<input name="name" placeholder="Parent Name">
+<input name="name" placeholder="Parent Name" required>
 
-<input name="mobile" placeholder="Mobile Number">
+<input name="mobile" placeholder="Mobile Number" required>
 
-<input name="student_roll" placeholder="Student Roll Number">
+<input name="student_roll" placeholder="Student Roll Number" required>
 
-<input type="password" name="password" placeholder="Password">
+<input type="password" name="password" placeholder="Password" required>
 
 <button type="submit">Register Parent</button>
 
 </form>
 
+<a class="back" href="/select-role.html?mode=register">Back</a>
+
 </div>
+
+<div class="footer">Designed by R Siddhesh Aryan</div>
 
 </body>
 </html>
