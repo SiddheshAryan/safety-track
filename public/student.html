@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Student Dashboard</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="/socket.io/socket.io.js"></script>
+</head>
+<body>
+  <div class="dashboard">
+    <h2>Student Dashboard</h2>
+    <p id="studentRollText"></p>
+
+    <div style="margin-top:20px;">
+      <button id="startBtn" type="button">Start Live Tracking</button>
+    </div>
+
+    <div style="margin-top:12px;">
+      <button id="stopBtn" type="button">Stop Tracking</button>
+    </div>
+
+    <p id="statusText" style="margin-top:20px; color:#333;">Tracking not started</p>
+    <p id="locationText" style="margin-top:10px; color:#555;"></p>
+  </div>
+
+  <script>
+    const socket = io();
+
+    const params = new URLSearchParams(window.location.search);
+    const roll = params.get("roll");
+
+    const studentRollText = document.getElementById("studentRollText");
+    const statusText = document.getElementById("statusText");
+    const locationText = document.getElementById("locationText");
+    const startBtn = document.getElementById("startBtn");
+    const stopBtn = document.getElementById("stopBtn");
+
+    let watchId = null;
+    let lastLat = null;
+    let lastLng = null;
+
+    if (!roll) {
+      studentRollText.textContent = "No roll number found. Please login again.";
+      startBtn.disabled = true;
+      stopBtn.disabled = true;
+    } else {
+      studentRollText.textContent = `Roll Number: ${roll}`;
+    }
+
+    function sendLocation(lat, lng, status = "tracking") {
+      socket.emit("locationUpdate", {
+        roll,
+        lat,
+        lng,
+        status
+      });
+
+      locationText.textContent = `Latitude: ${lat.toFixed(6)} | Longitude: ${lng.toFixed(6)}`;
+    }
+
+    startBtn.addEventListener("click", () => {
+      if (!roll) return;
+
+      if (!navigator.geolocation) {
+        statusText.textContent = "Geolocation is not supported in this browser.";
+        return;
+      }
+
+      if (watchId !== null) {
+        statusText.textContent = "Tracking is already running.";
+        return;
+      }
+
+      statusText.textContent = "Starting live tracking...";
+
+      watchId = navigator.geolocation.watchPosition(
+        (position) => {
+          const lat = position.coords.latitude;
+          const lng = position.coords.longitude;
+
+          const isFirstPoint = lastLat === null || lastLng === null;
+
+          lastLat = lat;
+          lastLng = lng;
+
+          if (isFirstPoint) {
+            sendLocation(lat, lng, "start");
+            statusText.textContent = "Live tracking started.";
+          } else {
+            sendLocation(lat, lng, "tracking");
+            statusText.textContent = "Tracking in progress...";
+          }
+        },
+        (error) => {
+          if (error.code === error.PERMISSION_DENIED) {
+            statusText.textContent = "Location permission denied.";
+          } else if (error.code === error.POSITION_UNAVAILABLE) {
+            statusText.textContent = "Location unavailable.";
+          } else if (error.code === error.TIMEOUT) {
+            statusText.textContent = "Location request timed out.";
+          } else {
+            statusText.textContent = "Could not get location.";
+          }
+        },
+        {
+          enableHighAccuracy: true,
+          maximumAge: 0,
+          timeout: 10000
+        }
+      );
+    });
+
+    stopBtn.addEventListener("click", () => {
+      if (watchId === null) {
+        statusText.textContent = "Tracking is not running.";
+        return;
+      }
+
+      navigator.geolocation.clearWatch(watchId);
+      watchId = null;
+
+      if (lastLat !== null && lastLng !== null) {
+        sendLocation(lastLat, lastLng, "stop");
+      }
+
+      statusText.textContent = "Tracking stopped.";
+    });
+  </script>
+</body>
+</html>
