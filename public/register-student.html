@@ -3,27 +3,51 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Register Student</title>
+  <title>Student Registration</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <div class="card">
-    <h2>Student Registration</h2>
+  <div class="page-center">
+    <div class="card slide-in">
+      <h2 class="page-title" style="text-align:center; margin-bottom: 10px;">Student Registration</h2>
+      <p class="page-subtitle" style="text-align:center; margin-bottom: 22px;">
+        Create a student profile for live safety tracking.
+      </p>
 
-    <form id="studentRegisterForm">
-      <input type="text" id="name" placeholder="Student Name" required />
-      <input type="text" id="roll" placeholder="Roll Number" required />
-      <input type="text" id="gender" placeholder="Gender" />
-      <input type="text" id="faculty" placeholder="Faculty / Department" />
-      <input type="text" id="mother" placeholder="Mother Name" />
-      <input type="text" id="father" placeholder="Father Name" />
-      <input type="text" id="parent_mobile" placeholder="Parent Mobile Number" required />
+      <form id="studentRegisterForm">
+        <label for="name">Student Name</label>
+        <input type="text" id="name" placeholder="Enter student name" required />
 
-      <button type="submit">Register Student</button>
-    </form>
+        <label for="roll">Roll Number</label>
+        <input type="text" id="roll" placeholder="Enter roll number" required />
 
-    <p id="message" style="margin-top:15px; color:#333;"></p>
+        <label for="gender">Gender</label>
+        <input type="text" id="gender" placeholder="Enter gender" />
+
+        <label for="faculty">Faculty / Department</label>
+        <input type="text" id="faculty" placeholder="Enter faculty / department" />
+
+        <label for="mother">Mother Name</label>
+        <input type="text" id="mother" placeholder="Enter mother name" />
+
+        <label for="father">Father Name</label>
+        <input type="text" id="father" placeholder="Enter father name" />
+
+        <label for="parent_mobile">Parent Mobile Number</label>
+        <input type="text" id="parent_mobile" placeholder="Enter parent mobile number" required />
+
+        <button type="submit">Register Student</button>
+      </form>
+
+      <div class="button-row" style="margin-top: 16px;">
+        <a href="select-role.html?mode=register" class="secondary-btn">Back</a>
+      </div>
+
+      <p id="message" class="message" style="text-align:center;"></p>
+    </div>
   </div>
+
+  <div class="footer-credit">Designed by R Siddhesh Aryan</div>
 
   <script>
     const form = document.getElementById("studentRegisterForm");
@@ -59,9 +83,9 @@
 
           setTimeout(() => {
             window.location.href = `student.html?roll=${encodeURIComponent(payload.roll)}`;
-          }, 1000);
+          }, 900);
         } else {
-          message.textContent = result.message || "Registration failed.";
+          message.textContent = result.message || "Student registration failed.";
         }
       } catch (error) {
         message.textContent = "Server error. Please try again.";
