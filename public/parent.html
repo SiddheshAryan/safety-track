@@ -5,22 +5,47 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Parent Dashboard</title>
   <link rel="stylesheet" href="style.css" />
-  <link
-    rel="stylesheet"
-    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-  />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="/socket.io/socket.io.js"></script>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 </head>
 <body>
-  <div style="width: 100%; max-width: 1100px; padding: 20px;">
-    <div class="dashboard" style="width: 100%; box-sizing: border-box;">
-      <h2>Parent Dashboard</h2>
-      <p id="childRollText"></p>
-      <p id="parentStatusText" style="color:#444; margin-bottom: 20px;">Waiting for location...</p>
-      <div id="map" class="map-container" style="border-radius: 12px; overflow: hidden;"></div>
+  <div class="page-wrap">
+    <div class="dashboard fade-in">
+      <div class="dashboard-header">
+        <div>
+          <h1 class="dashboard-title">Parent Dashboard</h1>
+          <p class="page-subtitle">Monitor your child’s live movement and route history.</p>
+        </div>
+        <a href="index.html" class="secondary-btn">Logout</a>
+      </div>
+
+      <div class="info-grid">
+        <div class="info-box">
+          <strong>Tracking Roll Number</strong>
+          <span id="childRollText">Loading...</span>
+        </div>
+
+        <div class="info-box">
+          <strong>Status</strong>
+          <span id="parentStatusPill" class="status-pill">Waiting...</span>
+        </div>
+
+        <div class="info-box">
+          <strong>Route Info</strong>
+          <span id="routeInfoText">No route points yet.</span>
+        </div>
+      </div>
+
+      <p id="parentStatusText" class="message" style="margin-bottom: 16px;">Waiting for location...</p>
+
+      <div class="map-shell">
+        <div id="map" class="map-container"></div>
+      </div>
     </div>
   </div>
+
+  <div class="footer-credit">Designed by R Siddhesh Aryan</div>
 
   <script>
     const socket = io();
@@ -30,12 +55,26 @@
 
     const childRollText = document.getElementById("childRollText");
     const parentStatusText = document.getElementById("parentStatusText");
+    const parentStatusPill = document.getElementById("parentStatusPill");
+    const routeInfoText = document.getElementById("routeInfoText");
+
+    function setParentStatus(type, text, pillText) {
+      parentStatusText.textContent = text;
+      parentStatusPill.textContent = pillText || text;
+      parentStatusPill.className = "status-pill";
+
+      if (type === "live") {
+        parentStatusPill.classList.add("status-live");
+      } else if (type === "stop") {
+        parentStatusPill.classList.add("status-stop");
+      }
+    }
 
     if (!roll) {
-      childRollText.textContent = "No child roll number found. Please login again.";
-      parentStatusText.textContent = "Tracking unavailable.";
+      childRollText.textContent = "No roll number found";
+      setParentStatus("stop", "Tracking unavailable. Please login again.", "Unavailable");
     } else {
-      childRollText.textContent = `Tracking Roll Number: ${roll}`;
+      childRollText.textContent = roll;
     }
 
     const map = L.map("map").setView([20.5937, 78.9629], 5);
@@ -60,7 +99,7 @@
           background:#ff3b30;
           border:3px solid white;
           border-radius:50%;
-          box-shadow:0 0 10px rgba(0,0,0,0.35);
+          box-shadow:0 0 12px rgba(0,0,0,0.35);
         "></div>
       `,
       iconSize: [18, 18],
@@ -76,7 +115,7 @@
           background:#007aff;
           border:3px solid white;
           border-radius:50%;
-          box-shadow:0 0 10px rgba(0,0,0,0.35);
+          box-shadow:0 0 12px rgba(0,0,0,0.35);
         "></div>
       `,
       iconSize: [18, 18],
@@ -92,12 +131,16 @@
           background:#34c759;
           border:3px solid white;
           border-radius:50%;
-          box-shadow:0 0 10px rgba(0,0,0,0.35);
+          box-shadow:0 0 12px rgba(0,0,0,0.35);
         "></div>
       `,
       iconSize: [18, 18],
       iconAnchor: [9, 9]
     });
+
+    function refreshRouteInfo() {
+      routeInfoText.textContent = `${routePoints.length} point${routePoints.length === 1 ? "" : "s"} recorded`;
+    }
 
     function drawRoute() {
       if (routeLine) {
@@ -107,35 +150,30 @@
       routeLine = L.polyline(routePoints, {
         color: "blue",
         weight: 5,
-        opacity: 0.8
+        opacity: 0.82
       }).addTo(map);
+
+      refreshRouteInfo();
     }
 
     function updateMapPoint(lat, lng, status) {
       const point = [lat, lng];
 
       if (status === "start") {
-        if (startMarker) {
-          map.removeLayer(startMarker);
-        }
-
-        startMarker = L.marker(point, { icon: startIcon }).addTo(map)
-          .bindPopup("Start Location");
-
-        routePoints = [point];
-        drawRoute();
-
+        if (startMarker) map.removeLayer(startMarker);
         if (currentMarker) {
           map.removeLayer(currentMarker);
           currentMarker = null;
         }
-
         if (stopMarker) {
           map.removeLayer(stopMarker);
           stopMarker = null;
         }
 
-        parentStatusText.textContent = "Tracking started.";
+        startMarker = L.marker(point, { icon: startIcon }).addTo(map).bindPopup("Start Location");
+        routePoints = [point];
+        drawRoute();
+        setParentStatus("live", "Tracking started.", "Started");
         map.setView(point, 18);
         return;
       }
@@ -148,10 +186,8 @@
           map.removeLayer(currentMarker);
         }
 
-        currentMarker = L.marker(point, { icon: currentIcon }).addTo(map)
-          .bindPopup("Current Location");
-
-        parentStatusText.textContent = "Live tracking in progress...";
+        currentMarker = L.marker(point, { icon: currentIcon }).addTo(map).bindPopup("Current Location");
+        setParentStatus("live", "Live tracking in progress...", "Live");
         map.setView(point, 18);
         return;
       }
@@ -169,10 +205,8 @@
           map.removeLayer(stopMarker);
         }
 
-        stopMarker = L.marker(point, { icon: stopIcon }).addTo(map)
-          .bindPopup("Stop Location");
-
-        parentStatusText.textContent = "Tracking stopped.";
+        stopMarker = L.marker(point, { icon: stopIcon }).addTo(map).bindPopup("Stop Location");
+        setParentStatus("stop", "Tracking stopped.", "Stopped");
         map.setView(point, 18);
       }
     }
@@ -185,7 +219,8 @@
         const result = await response.json();
 
         if (!result.success || !result.data || result.data.length === 0) {
-          parentStatusText.textContent = "No location history found yet.";
+          setParentStatus("stop", "No location history found yet.", "No Data");
+          refreshRouteInfo();
           return;
         }
 
@@ -193,7 +228,7 @@
           updateMapPoint(item.latitude, item.longitude, item.status);
         }
       } catch (error) {
-        parentStatusText.textContent = "Could not load location history.";
+        setParentStatus("stop", "Could not load location history.", "Error");
       }
     }
 
