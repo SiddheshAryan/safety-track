@@ -1,382 +1,220 @@
-const express = require("express");
-const http = require("http");
-const path = require("path");
-const cors = require("cors");
-const { Server } = require("socket.io");
-const pool = require("./db");
+const express = require("express")
+const path = require("path")
+const bodyParser = require("body-parser")
+const { Pool } = require("pg")
 
-const app = express();
-const server = http.createServer(app);
-const io = new Server(server);
+const app = express()
 
-app.use(cors());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-app.use(express.static(path.join(__dirname, "public")));
+app.use(bodyParser.json())
+app.use(bodyParser.urlencoded({ extended: true }))
+app.use(express.static("public"))
 
-async function initDb() {
-  try {
-    await pool.query(`
-      CREATE TABLE IF NOT EXISTS students (
-        id SERIAL PRIMARY KEY,
-        name VARCHAR(100) NOT NULL,
-        roll VARCHAR(50) UNIQUE NOT NULL,
-        gender VARCHAR(20),
-        faculty VARCHAR(100),
-        mother VARCHAR(100),
-        father VARCHAR(100),
-        parent_mobile VARCHAR(20),
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      );
-    `);
+const pool = new Pool({
+connectionString: process.env.DATABASE_URL,
+ssl: { rejectUnauthorized: false }
+})
 
-    await pool.query(`
-      CREATE TABLE IF NOT EXISTS parents (
-        id SERIAL PRIMARY KEY,
-        name VARCHAR(100) NOT NULL,
-        child_roll VARCHAR(50) NOT NULL,
-        mobile VARCHAR(20),
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      );
-    `);
+/* =========================
+CREATE TABLES
+========================= */
 
-    await pool.query(`
-      CREATE TABLE IF NOT EXISTS faculty (
-        id SERIAL PRIMARY KEY,
-        name VARCHAR(100) UNIQUE NOT NULL,
-        subject VARCHAR(100),
-        mobile VARCHAR(20),
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      );
-    `);
+async function initDB(){
 
-    await pool.query(`
-      CREATE TABLE IF NOT EXISTS locations (
-        id SERIAL PRIMARY KEY,
-        roll VARCHAR(50) NOT NULL,
-        latitude DOUBLE PRECISION NOT NULL,
-        longitude DOUBLE PRECISION NOT NULL,
-        status VARCHAR(20) DEFAULT 'tracking',
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      );
-    `);
+await pool.query(`
+CREATE TABLE IF NOT EXISTS faculty(
+faculty_id TEXT PRIMARY KEY,
+name TEXT,
+department TEXT,
+mobile TEXT,
+password TEXT
+)
+`)
 
-    console.log("Database tables ready");
-  } catch (error) {
-    console.error("Database init error:", error.message);
-  }
+await pool.query(`
+CREATE TABLE IF NOT EXISTS students(
+roll_number TEXT PRIMARY KEY,
+name TEXT,
+gender TEXT,
+department TEXT,
+faculty_id TEXT,
+mother_name TEXT,
+father_name TEXT,
+parent_mobile TEXT,
+password TEXT,
+FOREIGN KEY (faculty_id) REFERENCES faculty(faculty_id)
+)
+`)
+
+await pool.query(`
+CREATE TABLE IF NOT EXISTS parents(
+id SERIAL PRIMARY KEY,
+name TEXT,
+mobile TEXT,
+student_roll TEXT,
+password TEXT,
+FOREIGN KEY (student_roll) REFERENCES students(roll_number)
+)
+`)
+
 }
 
-initDb();
+initDB()
 
-app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "public", "index.html"));
-});
+/* =========================
+STUDENT REGISTER
+========================= */
 
-/* ---------------- STUDENT ---------------- */
+app.post("/register-student", async (req,res)=>{
 
-app.post("/register/student", async (req, res) => {
-  try {
-    const { name, roll, gender, faculty, mother, father, parent_mobile } = req.body;
+try{
 
-    if (!name || !roll) {
-      return res.status(400).json({
-        success: false,
-        message: "Name and roll are required"
-      });
-    }
+const {
+name,
+roll,
+gender,
+department,
+faculty_id,
+mother,
+father,
+parent_mobile,
+password
+} = req.body
 
-    await pool.query(
-      `INSERT INTO students (name, roll, gender, faculty, mother, father, parent_mobile)
-       VALUES ($1, $2, $3, $4, $5, $6, $7)
-       ON CONFLICT (roll) DO UPDATE SET
-         name = EXCLUDED.name,
-         gender = EXCLUDED.gender,
-         faculty = EXCLUDED.faculty,
-         mother = EXCLUDED.mother,
-         father = EXCLUDED.father,
-         parent_mobile = EXCLUDED.parent_mobile`,
-      [name, roll, gender, faculty, mother, father, parent_mobile]
-    );
+await pool.query(
+`INSERT INTO students
+(name,roll_number,gender,department,faculty_id,mother_name,father_name,parent_mobile,password)
+VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
+[name,roll,gender,department,faculty_id,mother,father,parent_mobile,password]
+)
 
-    res.json({
-      success: true,
-      message: "Student registered successfully"
-    });
-  } catch (error) {
-    console.error("Student registration error:", error.message);
-    res.status(500).json({
-      success: false,
-      message: "Student registration failed"
-    });
-  }
-});
+res.redirect("/login.html?role=student")
 
-app.get("/student/:roll", async (req, res) => {
-  try {
-    const { roll } = req.params;
+}catch(err){
+console.log(err)
+res.send("Student registration failed")
+}
 
-    const result = await pool.query(
-      `SELECT * FROM students WHERE roll = $1 LIMIT 1`,
-      [roll]
-    );
+})
 
-    if (result.rows.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: "Student not found"
-      });
-    }
+/* =========================
+PARENT REGISTER
+========================= */
 
-    res.json({
-      success: true,
-      data: result.rows[0]
-    });
-  } catch (error) {
-    console.error("Student fetch error:", error.message);
-    res.status(500).json({
-      success: false,
-      message: "Could not fetch student"
-    });
-  }
-});
+app.post("/register-parent", async (req,res)=>{
 
-/* ---------------- PARENT ---------------- */
+try{
 
-app.post("/register/parent", async (req, res) => {
-  try {
-    const { name, child_roll, mobile } = req.body;
+const { name, mobile, student_roll, password } = req.body
 
-    if (!name || !child_roll) {
-      return res.status(400).json({
-        success: false,
-        message: "Parent name and child roll are required"
-      });
-    }
+await pool.query(
+`INSERT INTO parents(name,mobile,student_roll,password)
+VALUES($1,$2,$3,$4)`,
+[name,mobile,student_roll,password]
+)
 
-    const studentCheck = await pool.query(
-      `SELECT id FROM students WHERE roll = $1 LIMIT 1`,
-      [child_roll]
-    );
+res.redirect("/login.html?role=parent")
 
-    if (studentCheck.rows.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: "Student roll number not found"
-      });
-    }
+}catch(err){
+console.log(err)
+res.send("Parent registration failed")
+}
 
-    await pool.query(
-      `INSERT INTO parents (name, child_roll, mobile)
-       VALUES ($1, $2, $3)`,
-      [name, child_roll, mobile]
-    );
+})
 
-    res.json({
-      success: true,
-      message: "Parent registered successfully"
-    });
-  } catch (error) {
-    console.error("Parent registration error:", error.message);
-    res.status(500).json({
-      success: false,
-      message: "Parent registration failed"
-    });
-  }
-});
+/* =========================
+FACULTY REGISTER
+========================= */
 
-app.get("/parent/:child_roll", async (req, res) => {
-  try {
-    const { child_roll } = req.params;
+app.post("/register-faculty", async (req,res)=>{
 
-    const result = await pool.query(
-      `SELECT * FROM parents WHERE child_roll = $1 ORDER BY created_at DESC LIMIT 1`,
-      [child_roll]
-    );
+try{
 
-    if (result.rows.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: "Parent not found"
-      });
-    }
+const { faculty_id, name, department, mobile, password } = req.body
 
-    res.json({
-      success: true,
-      data: result.rows[0]
-    });
-  } catch (error) {
-    console.error("Parent fetch error:", error.message);
-    res.status(500).json({
-      success: false,
-      message: "Could not fetch parent"
-    });
-  }
-});
+await pool.query(
+`INSERT INTO faculty(faculty_id,name,department,mobile,password)
+VALUES($1,$2,$3,$4,$5)`,
+[faculty_id,name,department,mobile,password]
+)
 
-/* ---------------- FACULTY ---------------- */
+res.redirect("/login.html?role=faculty")
 
-app.post("/register/faculty", async (req, res) => {
-  try {
-    const { name, subject, mobile } = req.body;
+}catch(err){
+console.log(err)
+res.send("Faculty registration failed")
+}
 
-    if (!name) {
-      return res.status(400).json({
-        success: false,
-        message: "Faculty name is required"
-      });
-    }
+})
 
-    await pool.query(
-      `INSERT INTO faculty (name, subject, mobile)
-       VALUES ($1, $2, $3)
-       ON CONFLICT (name) DO UPDATE SET
-         subject = EXCLUDED.subject,
-         mobile = EXCLUDED.mobile`,
-      [name, subject, mobile]
-    );
+/* =========================
+STUDENT LOGIN
+========================= */
 
-    res.json({
-      success: true,
-      message: "Faculty registered successfully"
-    });
-  } catch (error) {
-    console.error("Faculty registration error:", error.message);
-    res.status(500).json({
-      success: false,
-      message: "Faculty registration failed"
-    });
-  }
-});
+app.post("/login/student", async (req,res)=>{
 
-app.get("/faculty/:name", async (req, res) => {
-  try {
-    const { name } = req.params;
+const { roll,password } = req.body
 
-    const result = await pool.query(
-      `SELECT * FROM faculty WHERE LOWER(name) = LOWER($1) LIMIT 1`,
-      [name]
-    );
+const result = await pool.query(
+`SELECT * FROM students
+WHERE roll_number=$1 AND password=$2`,
+[roll,password]
+)
 
-    if (result.rows.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: "Faculty not found"
-      });
-    }
+if(result.rows.length===0)
+return res.json({success:false,message:"Invalid login"})
 
-    res.json({
-      success: true,
-      data: result.rows[0]
-    });
-  } catch (error) {
-    console.error("Faculty fetch error:", error.message);
-    res.status(500).json({
-      success: false,
-      message: "Could not fetch faculty"
-    });
-  }
-});
+res.json({success:true})
 
-/* ---------------- LOCATION ---------------- */
+})
 
-app.get("/location/:roll", async (req, res) => {
-  try {
-    const { roll } = req.params;
+/* =========================
+PARENT LOGIN
+========================= */
 
-    const result = await pool.query(
-      `SELECT roll, latitude, longitude, status, created_at
-       FROM locations
-       WHERE roll = $1
-       ORDER BY created_at DESC
-       LIMIT 1`,
-      [roll]
-    );
+app.post("/login/parent", async (req,res)=>{
 
-    if (result.rows.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: "No location found"
-      });
-    }
+const { student_roll,password } = req.body
 
-    res.json({
-      success: true,
-      data: result.rows[0]
-    });
-  } catch (error) {
-    console.error("Latest location fetch error:", error.message);
-    res.status(500).json({
-      success: false,
-      message: "Could not fetch location"
-    });
-  }
-});
+const result = await pool.query(
+`SELECT * FROM parents
+WHERE student_roll=$1 AND password=$2`,
+[student_roll,password]
+)
 
-app.get("/location-history/:roll", async (req, res) => {
-  try {
-    const { roll } = req.params;
+if(result.rows.length===0)
+return res.json({success:false,message:"Invalid login"})
 
-    const result = await pool.query(
-      `SELECT latitude, longitude, status, created_at
-       FROM locations
-       WHERE roll = $1
-       ORDER BY created_at ASC`,
-      [roll]
-    );
+res.json({success:true})
 
-    res.json({
-      success: true,
-      data: result.rows
-    });
-  } catch (error) {
-    console.error("Location history fetch error:", error.message);
-    res.status(500).json({
-      success: false,
-      message: "Could not fetch history"
-    });
-  }
-});
+})
 
-/* ---------------- SOCKET ---------------- */
+/* =========================
+FACULTY LOGIN
+========================= */
 
-io.on("connection", (socket) => {
-  console.log("User connected:", socket.id);
+app.post("/login/faculty", async (req,res)=>{
 
-  socket.on("joinParentRoom", (roll) => {
-    socket.join(`roll_${roll}`);
-  });
+const { faculty_id,password } = req.body
 
-  socket.on("locationUpdate", async (data) => {
-    try {
-      const { roll, lat, lng, status } = data;
+const result = await pool.query(
+`SELECT * FROM faculty
+WHERE faculty_id=$1 AND password=$2`,
+[faculty_id,password]
+)
 
-      if (!roll || lat === undefined || lng === undefined) return;
+if(result.rows.length===0)
+return res.json({success:false,message:"Invalid login"})
 
-      await pool.query(
-        `INSERT INTO locations (roll, latitude, longitude, status)
-         VALUES ($1, $2, $3, $4)`,
-        [roll, lat, lng, status || "tracking"]
-      );
+res.json({success:true})
 
-      io.to(`roll_${roll}`).emit("locationReceive", {
-        roll,
-        lat,
-        lng,
-        status: status || "tracking"
-      });
-    } catch (error) {
-      console.error("locationUpdate error:", error.message);
-    }
-  });
+})
 
-  socket.on("disconnect", () => {
-    console.log("User disconnected:", socket.id);
-  });
-});
+/* =========================
+START SERVER
+========================= */
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3000
 
-server.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+app.listen(PORT,()=>{
+console.log("Server running on port",PORT)
+})
