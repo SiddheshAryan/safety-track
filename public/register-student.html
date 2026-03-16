@@ -1,96 +1,98 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Student Registration</title>
-  <link rel="stylesheet" href="style.css" />
+<title>Student Registration</title>
+
+<style>
+
+body{
+font-family:Arial;
+background:linear-gradient(135deg,#b8e3d3,#c5ddf0);
+display:flex;
+justify-content:center;
+align-items:center;
+height:100vh;
+}
+
+.card{
+background:white;
+padding:40px;
+border-radius:20px;
+box-shadow:0 15px 40px rgba(0,0,0,0.2);
+width:550px;
+}
+
+h2{
+text-align:center;
+color:#055f6b;
+}
+
+input,select{
+width:100%;
+padding:12px;
+margin-top:10px;
+margin-bottom:18px;
+border-radius:10px;
+border:1px solid #ccc;
+}
+
+button{
+width:100%;
+padding:14px;
+background:#2f6fb8;
+color:white;
+border:none;
+border-radius:12px;
+font-weight:bold;
+cursor:pointer;
+}
+
+button:hover{
+background:#1d4f8f;
+}
+
+</style>
+
 </head>
+
 <body>
-  <div class="page-center">
-    <div class="card slide-in">
-      <h2 class="page-title" style="text-align:center; margin-bottom: 10px;">Student Registration</h2>
-      <p class="page-subtitle" style="text-align:center; margin-bottom: 22px;">
-        Create a student profile for live safety tracking.
-      </p>
 
-      <form id="studentRegisterForm">
-        <label for="name">Student Name</label>
-        <input type="text" id="name" placeholder="Enter student name" required />
+<div class="card">
 
-        <label for="roll">Roll Number</label>
-        <input type="text" id="roll" placeholder="Enter roll number" required />
+<h2>Student Registration</h2>
 
-        <label for="gender">Gender</label>
-        <input type="text" id="gender" placeholder="Enter gender" />
+<form action="/register-student" method="POST">
 
-        <label for="faculty">Faculty / Department</label>
-        <input type="text" id="faculty" placeholder="Enter faculty / department" />
+<input name="name" placeholder="Student Name" required>
 
-        <label for="mother">Mother Name</label>
-        <input type="text" id="mother" placeholder="Enter mother name" />
+<input name="roll" placeholder="Roll Number" required>
 
-        <label for="father">Father Name</label>
-        <input type="text" id="father" placeholder="Enter father name" />
+<select name="gender">
+<option>Male</option>
+<option>Female</option>
+</select>
 
-        <label for="parent_mobile">Parent Mobile Number</label>
-        <input type="text" id="parent_mobile" placeholder="Enter parent mobile number" required />
+<input name="department" placeholder="Department">
 
-        <button type="submit">Register Student</button>
-      </form>
+<select name="faculty_id">
+<option value="1">Dr A</option>
+<option value="2">Dr B</option>
+<option value="3">Dr C</option>
+</select>
 
-      <div class="button-row" style="margin-top: 16px;">
-        <a href="select-role.html?mode=register" class="secondary-btn">Back</a>
-      </div>
+<input name="mother" placeholder="Mother Name">
 
-      <p id="message" class="message" style="text-align:center;"></p>
-    </div>
-  </div>
+<input name="father" placeholder="Father Name">
 
-  <div class="footer-credit">Designed by R Siddhesh Aryan</div>
+<input name="parent_mobile" placeholder="Parent Mobile">
 
-  <script>
-    const form = document.getElementById("studentRegisterForm");
-    const message = document.getElementById("message");
+<input type="password" name="password" placeholder="Password">
 
-    form.addEventListener("submit", async function (e) {
-      e.preventDefault();
+<button type="submit">Register Student</button>
 
-      const payload = {
-        name: document.getElementById("name").value.trim(),
-        roll: document.getElementById("roll").value.trim(),
-        gender: document.getElementById("gender").value.trim(),
-        faculty: document.getElementById("faculty").value.trim(),
-        mother: document.getElementById("mother").value.trim(),
-        father: document.getElementById("father").value.trim(),
-        parent_mobile: document.getElementById("parent_mobile").value.trim()
-      };
+</form>
 
-      try {
-        const response = await fetch("/register/student", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify(payload)
-        });
+</div>
 
-        const result = await response.json();
-
-        if (result.success) {
-          message.textContent = "Student registered successfully.";
-          form.reset();
-
-          setTimeout(() => {
-            window.location.href = `student.html?roll=${encodeURIComponent(payload.roll)}`;
-          }, 900);
-        } else {
-          message.textContent = result.message || "Student registration failed.";
-        }
-      } catch (error) {
-        message.textContent = "Server error. Please try again.";
-      }
-    });
-  </script>
 </body>
 </html>
