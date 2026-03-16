@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Register Faculty</title>
+<link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+<div class="card">
+
+<h2>Faculty Registration</h2>
+
+<form id="facultyRegisterForm">
+
+<input type="text" id="name" placeholder="Faculty Name" required>
+
+<input type="text" id="subject" placeholder="Subject">
+
+<input type="text" id="mobile" placeholder="Mobile Number">
+
+<button type="submit">Register Faculty</button>
+
+</form>
+
+<p id="message" style="margin-top:15px;color:#333;"></p>
+
+</div>
+
+<script>
+
+const form=document.getElementById("facultyRegisterForm");
+const message=document.getElementById("message");
+
+form.addEventListener("submit",async function(e){
+
+e.preventDefault();
+
+const payload={
+name:document.getElementById("name").value.trim(),
+subject:document.getElementById("subject").value.trim(),
+mobile:document.getElementById("mobile").value.trim()
+};
+
+try{
+
+const response=await fetch("/register/faculty",{
+method:"POST",
+headers:{
+"Content-Type":"application/json"
+},
+body:JSON.stringify(payload)
+});
+
+const result=await response.json();
+
+if(result.success){
+
+message.textContent="Faculty registered successfully";
+form.reset();
+
+setTimeout(()=>{
+window.location.href="login.html";
+},1000);
+
+}
+else{
+message.textContent=result.message || "Registration failed";
+}
+
+}
+catch(error){
+
+message.textContent="Server error. Please try again.";
+
+}
+
+});
+
+</script>
+
+</body>
+</html>
