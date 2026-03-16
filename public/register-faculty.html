@@ -1,80 +1,175 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Faculty Registration</title>
-  <link rel="stylesheet" href="style.css" />
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Faculty Registration</title>
+
+<style>
+
+*{
+box-sizing:border-box;
+}
+
+body{
+margin:0;
+font-family:Arial, Helvetica, sans-serif;
+min-height:100vh;
+display:flex;
+justify-content:center;
+align-items:center;
+background:linear-gradient(135deg,#b8e3d3,#c5ddf0);
+padding:20px;
+}
+
+.container{
+width:100%;
+max-width:520px;
+background:rgba(255,255,255,0.75);
+backdrop-filter:blur(16px);
+border-radius:28px;
+padding:40px;
+box-shadow:0 20px 50px rgba(0,0,0,0.15);
+}
+
+.title{
+text-align:center;
+font-size:32px;
+font-weight:800;
+color:#055f6b;
+margin-bottom:8px;
+}
+
+.subtitle{
+text-align:center;
+color:#4a6770;
+margin-bottom:30px;
+}
+
+label{
+font-weight:700;
+display:block;
+margin-bottom:6px;
+color:#123a47;
+}
+
+input{
+width:100%;
+padding:13px;
+margin-bottom:18px;
+border-radius:12px;
+border:1px solid #ddd;
+font-size:15px;
+outline:none;
+}
+
+input:focus{
+border-color:#4c8ed9;
+box-shadow:0 0 0 4px rgba(76,142,217,0.15);
+}
+
+button{
+width:100%;
+padding:14px;
+border:none;
+border-radius:14px;
+font-weight:700;
+background:linear-gradient(135deg,#4c8ed9,#2f6fb8);
+color:white;
+cursor:pointer;
+font-size:16px;
+box-shadow:0 12px 24px rgba(76,142,217,0.28);
+}
+
+button:hover{
+transform:translateY(-2px);
+}
+
+.back{
+display:block;
+text-align:center;
+margin-top:16px;
+text-decoration:none;
+color:#2f6fb8;
+font-weight:700;
+}
+
+.footer{
+position:fixed;
+bottom:12px;
+width:100%;
+text-align:center;
+font-weight:700;
+color:#1a4655;
+}
+
+</style>
 </head>
+
 <body>
-  <div class="page-center">
-    <div class="card slide-in">
-      <h2 class="page-title" style="text-align:center; margin-bottom: 10px;">Faculty Registration</h2>
-      <p class="page-subtitle" style="text-align:center; margin-bottom: 22px;">
-        Register faculty access for the safety tracker system.
-      </p>
 
-      <form id="facultyRegisterForm">
-        <label for="name">Faculty Name</label>
-        <input type="text" id="name" placeholder="Enter faculty name" required />
+<div class="container">
 
-        <label for="subject">Subject</label>
-        <input type="text" id="subject" placeholder="Enter subject" />
+<div class="title">Faculty Registration</div>
+<div class="subtitle">Create a faculty account</div>
 
-        <label for="mobile">Mobile Number</label>
-        <input type="text" id="mobile" placeholder="Enter mobile number" />
+<form action="/register-faculty" method="POST">
 
-        <button type="submit">Register Faculty</button>
-      </form>
+<label>Faculty ID</label>
+<input
+type="text"
+name="faculty_id"
+placeholder="Enter Faculty ID"
+required
+>
 
-      <div class="button-row" style="margin-top: 16px;">
-        <a href="select-role.html?mode=register" class="secondary-btn">Back</a>
-      </div>
+<label>Faculty Name</label>
+<input
+type="text"
+name="name"
+placeholder="Enter Faculty Name"
+required
+>
 
-      <p id="message" class="message" style="text-align:center;"></p>
-    </div>
-  </div>
+<label>Department / Subject</label>
+<input
+type="text"
+name="department"
+placeholder="Example: Computer Science"
+required
+>
 
-  <div class="footer-credit">Designed by R Siddhesh Aryan</div>
+<label>Mobile Number</label>
+<input
+type="text"
+name="mobile"
+placeholder="Enter Mobile Number"
+required
+>
 
-  <script>
-    const form = document.getElementById("facultyRegisterForm");
-    const message = document.getElementById("message");
+<label>Password</label>
+<input
+type="password"
+name="password"
+placeholder="Create Password"
+required
+>
 
-    form.addEventListener("submit", async function (e) {
-      e.preventDefault();
+<button type="submit">
+Register Faculty
+</button>
 
-      const payload = {
-        name: document.getElementById("name").value.trim(),
-        subject: document.getElementById("subject").value.trim(),
-        mobile: document.getElementById("mobile").value.trim()
-      };
+</form>
 
-      try {
-        const response = await fetch("/register/faculty", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify(payload)
-        });
+<a class="back" href="/select-role.html?mode=register">
+Back
+</a>
 
-        const result = await response.json();
+</div>
 
-        if (result.success) {
-          message.textContent = "Faculty registered successfully.";
-          form.reset();
+<div class="footer">
+Designed by R Siddhesh Aryan
+</div>
 
-          setTimeout(() => {
-            window.location.href = `faculty.html?name=${encodeURIComponent(payload.name)}`;
-          }, 900);
-        } else {
-          message.textContent = result.message || "Faculty registration failed.";
-        }
-      } catch (error) {
-        message.textContent = "Server error. Please try again.";
-      }
-    });
-  </script>
 </body>
 </html>
