@@ -1,85 +1,80 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Register Faculty</title>
-<link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Faculty Registration</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
-
 <body>
+  <div class="page-center">
+    <div class="card slide-in">
+      <h2 class="page-title" style="text-align:center; margin-bottom: 10px;">Faculty Registration</h2>
+      <p class="page-subtitle" style="text-align:center; margin-bottom: 22px;">
+        Register faculty access for the safety tracker system.
+      </p>
 
-<div class="card">
+      <form id="facultyRegisterForm">
+        <label for="name">Faculty Name</label>
+        <input type="text" id="name" placeholder="Enter faculty name" required />
 
-<h2>Faculty Registration</h2>
+        <label for="subject">Subject</label>
+        <input type="text" id="subject" placeholder="Enter subject" />
 
-<form id="facultyRegisterForm">
+        <label for="mobile">Mobile Number</label>
+        <input type="text" id="mobile" placeholder="Enter mobile number" />
 
-<input type="text" id="name" placeholder="Faculty Name" required>
+        <button type="submit">Register Faculty</button>
+      </form>
 
-<input type="text" id="subject" placeholder="Subject">
+      <div class="button-row" style="margin-top: 16px;">
+        <a href="select-role.html?mode=register" class="secondary-btn">Back</a>
+      </div>
 
-<input type="text" id="mobile" placeholder="Mobile Number">
+      <p id="message" class="message" style="text-align:center;"></p>
+    </div>
+  </div>
 
-<button type="submit">Register Faculty</button>
+  <div class="footer-credit">Designed by R Siddhesh Aryan</div>
 
-</form>
+  <script>
+    const form = document.getElementById("facultyRegisterForm");
+    const message = document.getElementById("message");
 
-<p id="message" style="margin-top:15px;color:#333;"></p>
+    form.addEventListener("submit", async function (e) {
+      e.preventDefault();
 
-</div>
+      const payload = {
+        name: document.getElementById("name").value.trim(),
+        subject: document.getElementById("subject").value.trim(),
+        mobile: document.getElementById("mobile").value.trim()
+      };
 
-<script>
+      try {
+        const response = await fetch("/register/faculty", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(payload)
+        });
 
-const form=document.getElementById("facultyRegisterForm");
-const message=document.getElementById("message");
+        const result = await response.json();
 
-form.addEventListener("submit",async function(e){
+        if (result.success) {
+          message.textContent = "Faculty registered successfully.";
+          form.reset();
 
-e.preventDefault();
-
-const payload={
-name:document.getElementById("name").value.trim(),
-subject:document.getElementById("subject").value.trim(),
-mobile:document.getElementById("mobile").value.trim()
-};
-
-try{
-
-const response=await fetch("/register/faculty",{
-method:"POST",
-headers:{
-"Content-Type":"application/json"
-},
-body:JSON.stringify(payload)
-});
-
-const result=await response.json();
-
-if(result.success){
-
-message.textContent="Faculty registered successfully";
-form.reset();
-
-setTimeout(()=>{
-window.location.href="login.html";
-},1000);
-
-}
-else{
-message.textContent=result.message || "Registration failed";
-}
-
-}
-catch(error){
-
-message.textContent="Server error. Please try again.";
-
-}
-
-});
-
-</script>
-
+          setTimeout(() => {
+            window.location.href = `faculty.html?name=${encodeURIComponent(payload.name)}`;
+          }, 900);
+        } else {
+          message.textContent = result.message || "Faculty registration failed.";
+        }
+      } catch (error) {
+        message.textContent = "Server error. Please try again.";
+      }
+    });
+  </script>
 </body>
 </html>
