@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Register Student</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="card">
+    <h2>Student Registration</h2>
+
+    <form id="studentRegisterForm">
+      <input type="text" id="name" placeholder="Student Name" required />
+      <input type="text" id="roll" placeholder="Roll Number" required />
+      <input type="text" id="gender" placeholder="Gender" />
+      <input type="text" id="faculty" placeholder="Faculty / Department" />
+      <input type="text" id="mother" placeholder="Mother Name" />
+      <input type="text" id="father" placeholder="Father Name" />
+      <input type="text" id="parent_mobile" placeholder="Parent Mobile Number" required />
+
+      <button type="submit">Register Student</button>
+    </form>
+
+    <p id="message" style="margin-top:15px; color:#333;"></p>
+  </div>
+
+  <script>
+    const form = document.getElementById("studentRegisterForm");
+    const message = document.getElementById("message");
+
+    form.addEventListener("submit", async function (e) {
+      e.preventDefault();
+
+      const payload = {
+        name: document.getElementById("name").value.trim(),
+        roll: document.getElementById("roll").value.trim(),
+        gender: document.getElementById("gender").value.trim(),
+        faculty: document.getElementById("faculty").value.trim(),
+        mother: document.getElementById("mother").value.trim(),
+        father: document.getElementById("father").value.trim(),
+        parent_mobile: document.getElementById("parent_mobile").value.trim()
+      };
+
+      try {
+        const response = await fetch("/register/student", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(payload)
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+          message.textContent = "Student registered successfully.";
+          form.reset();
+
+          setTimeout(() => {
+            window.location.href = `student.html?roll=${encodeURIComponent(payload.roll)}`;
+          }, 1000);
+        } else {
+          message.textContent = result.message || "Registration failed.";
+        }
+      } catch (error) {
+        message.textContent = "Server error. Please try again.";
+      }
+    });
+  </script>
+</body>
+</html>
