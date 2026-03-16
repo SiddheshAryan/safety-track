@@ -1,80 +1,77 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Parent Registration</title>
-  <link rel="stylesheet" href="style.css" />
+<title>Parent Registration</title>
+
+<style>
+
+body{
+font-family:Arial;
+background:linear-gradient(135deg,#b8e3d3,#c5ddf0);
+display:flex;
+justify-content:center;
+align-items:center;
+height:100vh;
+}
+
+.card{
+background:white;
+padding:40px;
+border-radius:20px;
+box-shadow:0 15px 40px rgba(0,0,0,0.2);
+width:450px;
+}
+
+h2{
+text-align:center;
+color:#055f6b;
+}
+
+input{
+width:100%;
+padding:12px;
+margin-top:10px;
+margin-bottom:18px;
+border-radius:10px;
+border:1px solid #ccc;
+}
+
+button{
+width:100%;
+padding:14px;
+background:#2f6fb8;
+color:white;
+border:none;
+border-radius:12px;
+font-weight:bold;
+cursor:pointer;
+}
+
+</style>
+
 </head>
+
 <body>
-  <div class="page-center">
-    <div class="card slide-in">
-      <h2 class="page-title" style="text-align:center; margin-bottom: 10px;">Parent Registration</h2>
-      <p class="page-subtitle" style="text-align:center; margin-bottom: 22px;">
-        Register a parent profile to monitor a student in real time.
-      </p>
 
-      <form id="parentRegisterForm">
-        <label for="name">Parent Name</label>
-        <input type="text" id="name" placeholder="Enter parent name" required />
+<div class="card">
 
-        <label for="child_roll">Child Roll Number</label>
-        <input type="text" id="child_roll" placeholder="Enter child roll number" required />
+<h2>Parent Registration</h2>
 
-        <label for="mobile">Mobile Number</label>
-        <input type="text" id="mobile" placeholder="Enter mobile number" required />
+<form action="/register-parent" method="POST">
 
-        <button type="submit">Register Parent</button>
-      </form>
+<input name="name" placeholder="Parent Name">
 
-      <div class="button-row" style="margin-top: 16px;">
-        <a href="select-role.html?mode=register" class="secondary-btn">Back</a>
-      </div>
+<input name="mobile" placeholder="Mobile Number">
 
-      <p id="message" class="message" style="text-align:center;"></p>
-    </div>
-  </div>
+<input name="student_roll" placeholder="Student Roll Number">
 
-  <div class="footer-credit">Designed by R Siddhesh Aryan</div>
+<input type="password" name="password" placeholder="Password">
 
-  <script>
-    const form = document.getElementById("parentRegisterForm");
-    const message = document.getElementById("message");
+<button type="submit">Register Parent</button>
 
-    form.addEventListener("submit", async function (e) {
-      e.preventDefault();
+</form>
 
-      const payload = {
-        name: document.getElementById("name").value.trim(),
-        child_roll: document.getElementById("child_roll").value.trim(),
-        mobile: document.getElementById("mobile").value.trim()
-      };
+</div>
 
-      try {
-        const response = await fetch("/register/parent", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify(payload)
-        });
-
-        const result = await response.json();
-
-        if (result.success) {
-          message.textContent = "Parent registered successfully.";
-          form.reset();
-
-          setTimeout(() => {
-            window.location.href = `parent.html?roll=${encodeURIComponent(payload.child_roll)}`;
-          }, 900);
-        } else {
-          message.textContent = result.message || "Parent registration failed.";
-        }
-      } catch (error) {
-        message.textContent = "Server error. Please try again.";
-      }
-    });
-  </script>
 </body>
 </html>
