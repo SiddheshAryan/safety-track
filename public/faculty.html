@@ -9,9 +9,7 @@
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
   <style>
-    * {
-      box-sizing: border-box;
-    }
+    * { box-sizing: border-box; }
 
     body {
       margin: 0;
@@ -27,19 +25,14 @@
       margin: 0 auto;
     }
 
-    .top-card,
-    .search-card,
-    .map-card {
+    .card {
       background: rgba(255, 255, 255, 0.78);
       backdrop-filter: blur(16px);
       -webkit-backdrop-filter: blur(16px);
       border: 1px solid rgba(255, 255, 255, 0.45);
       border-radius: 28px;
       box-shadow: 0 18px 50px rgba(16, 55, 72, 0.14);
-    }
-
-    .top-card {
-      padding: 32px;
+      padding: 28px;
       margin-bottom: 22px;
     }
 
@@ -49,6 +42,7 @@
       align-items: center;
       gap: 16px;
       flex-wrap: wrap;
+      margin-bottom: 22px;
     }
 
     .title {
@@ -77,20 +71,13 @@
       color: #2f6fb8;
       background: rgba(255,255,255,0.9);
       border: 1px solid rgba(76, 142, 217, 0.18);
-      transition: 0.2s ease;
     }
 
-    .logout-btn:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 12px 24px rgba(16, 55, 72, 0.1);
-      background: white;
-    }
-
-    .info-row {
+    .info-grid,
+    .summary-grid {
       display: grid;
       grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 16px;
-      margin-top: 24px;
     }
 
     .info-box {
@@ -104,11 +91,6 @@
       display: block;
       margin-bottom: 8px;
       color: #0b5d69;
-    }
-
-    .search-card {
-      padding: 28px;
-      margin-bottom: 22px;
     }
 
     .section-title {
@@ -127,6 +109,7 @@
       display: grid;
       grid-template-columns: 1fr 170px;
       gap: 14px;
+      margin-bottom: 14px;
     }
 
     input {
@@ -139,11 +122,6 @@
       background: rgba(255,255,255,0.95);
     }
 
-    input:focus {
-      border-color: #4c8ed9;
-      box-shadow: 0 0 0 4px rgba(76, 142, 217, 0.14);
-    }
-
     button {
       border: none;
       border-radius: 14px;
@@ -153,55 +131,48 @@
       background: linear-gradient(135deg, #4c8ed9, #2f6fb8);
       cursor: pointer;
       box-shadow: 0 14px 28px rgba(76, 142, 217, 0.25);
-      transition: 0.2s ease;
-    }
-
-    button:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 20px 32px rgba(76, 142, 217, 0.32);
     }
 
     .status-text {
-      margin-top: 14px;
+      margin-top: 6px;
       font-weight: 700;
       color: #244a57;
       min-height: 24px;
     }
 
-    .map-card {
-      padding: 24px;
-    }
-
-    .student-summary {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 16px;
-      margin-bottom: 18px;
-    }
-
-    .summary-box {
-      background: rgba(255,255,255,0.82);
-      border-radius: 18px;
-      padding: 16px;
-      border: 1px solid rgba(76, 142, 217, 0.12);
-    }
-
-    .summary-box strong {
-      display: block;
-      margin-bottom: 7px;
-      color: #0b5d69;
-    }
-
     .map-shell {
+      position: relative;
       border-radius: 22px;
       overflow: hidden;
       box-shadow: 0 14px 30px rgba(16, 55, 72, 0.12);
       border: 1px solid rgba(255,255,255,0.45);
+      margin-top: 18px;
+      min-height: 520px;
+      background: #eef4f7;
     }
 
     #map {
-      height: 560px;
+      height: 520px;
       width: 100%;
+    }
+
+    .map-overlay {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: #45616a;
+      background: rgba(238, 244, 247, 0.88);
+      z-index: 500;
+      padding: 20px;
+    }
+
+    .hidden {
+      display: none;
     }
 
     .footer-credit {
@@ -216,43 +187,15 @@
     }
 
     @media (max-width: 900px) {
-      .info-row,
-      .student-summary {
-        grid-template-columns: 1fr;
-      }
-
-      .search-row {
-        grid-template-columns: 1fr;
-      }
-
-      #map {
-        height: 420px;
-      }
-    }
-
-    @media (max-width: 600px) {
-      .title {
-        font-size: 2.1rem;
-      }
-
-      .top-card,
-      .search-card,
-      .map-card {
-        border-radius: 22px;
-      }
-
-      .top-card,
-      .search-card,
-      .map-card {
-        padding-left: 18px;
-        padding-right: 18px;
-      }
+      .info-grid, .summary-grid { grid-template-columns: 1fr; }
+      .search-row { grid-template-columns: 1fr; }
+      #map, .map-shell { min-height: 420px; height: 420px; }
     }
   </style>
 </head>
 <body>
   <div class="page">
-    <div class="top-card">
+    <div class="card">
       <div class="top-row">
         <div>
           <h1 class="title">Faculty Dashboard</h1>
@@ -261,7 +204,7 @@
         <a href="/index.html" class="logout-btn">Logout</a>
       </div>
 
-      <div class="info-row">
+      <div class="info-grid">
         <div class="info-box">
           <strong>Faculty ID</strong>
           <span id="facultyIdText">Not provided</span>
@@ -277,7 +220,7 @@
       </div>
     </div>
 
-    <div class="search-card">
+    <div class="card">
       <h2 class="section-title">Search Student</h2>
       <p class="section-text">Enter a student roll number to check the current tracking state.</p>
 
@@ -289,17 +232,17 @@
       <div class="status-text" id="facultyStatusText">Waiting for search...</div>
     </div>
 
-    <div class="map-card">
-      <div class="student-summary">
-        <div class="summary-box">
+    <div class="card">
+      <div class="summary-grid">
+        <div class="info-box">
           <strong>Student Roll Number</strong>
           <span id="studentRollText">Not selected</span>
         </div>
-        <div class="summary-box">
+        <div class="info-box">
           <strong>Tracking Status</strong>
           <span id="trackingStateText">Tracking has not started</span>
         </div>
-        <div class="summary-box">
+        <div class="info-box">
           <strong>Latest Coordinates</strong>
           <span id="latestCoordsText">No coordinates yet</span>
         </div>
@@ -307,6 +250,7 @@
 
       <div class="map-shell">
         <div id="map"></div>
+        <div class="map-overlay" id="mapOverlay">Tracking has not started</div>
       </div>
     </div>
   </div>
@@ -319,15 +263,15 @@
     const params = new URLSearchParams(window.location.search);
     const facultyId = params.get("faculty_id");
 
-    const facultyIdText = document.getElementById("facultyIdText");
+    document.getElementById("facultyIdText").textContent = facultyId || "Not provided";
+
     const rollInput = document.getElementById("rollInput");
     const searchBtn = document.getElementById("searchBtn");
     const facultyStatusText = document.getElementById("facultyStatusText");
     const studentRollText = document.getElementById("studentRollText");
     const trackingStateText = document.getElementById("trackingStateText");
     const latestCoordsText = document.getElementById("latestCoordsText");
-
-    facultyIdText.textContent = facultyId || "Not provided";
+    const mapOverlay = document.getElementById("mapOverlay");
 
     const map = L.map("map").setView([20.5937, 78.9629], 5);
 
@@ -336,105 +280,59 @@
       attribution: "&copy; OpenStreetMap contributors"
     }).addTo(map);
 
+    setTimeout(() => map.invalidateSize(), 300);
+
     let currentRoll = null;
-    let currentMarker = null;
+    let marker = null;
     let routeLine = null;
     let routePoints = [];
 
-    const startIcon = L.divIcon({
-      className: "",
-      html: `
-        <div style="
-          width:18px;
-          height:18px;
-          background:#ff3b30;
-          border:3px solid white;
-          border-radius:50%;
-          box-shadow:0 0 12px rgba(0,0,0,0.35);
-        "></div>
-      `,
-      iconSize: [18, 18],
-      iconAnchor: [9, 9]
-    });
-
-    const currentIcon = L.divIcon({
-      className: "",
-      html: `
-        <div style="
-          width:18px;
-          height:18px;
-          background:#007aff;
-          border:3px solid white;
-          border-radius:50%;
-          box-shadow:0 0 12px rgba(0,0,0,0.35);
-        "></div>
-      `,
-      iconSize: [18, 18],
-      iconAnchor: [9, 9]
-    });
-
-    const stopIcon = L.divIcon({
-      className: "",
-      html: `
-        <div style="
-          width:18px;
-          height:18px;
-          background:#34c759;
-          border:3px solid white;
-          border-radius:50%;
-          box-shadow:0 0 12px rgba(0,0,0,0.35);
-        "></div>
-      `,
-      iconSize: [18, 18],
-      iconAnchor: [9, 9]
-    });
-
-    function clearMapState() {
+    function resetMap() {
       routePoints = [];
+      if (marker) {
+        map.removeLayer(marker);
+        marker = null;
+      }
       if (routeLine) {
         map.removeLayer(routeLine);
         routeLine = null;
       }
-      if (currentMarker) {
-        map.removeLayer(currentMarker);
-        currentMarker = null;
-      }
+      map.setView([20.5937, 78.9629], 5);
+      setTimeout(() => map.invalidateSize(), 150);
     }
 
-    function drawRoute() {
-      if (routeLine) {
-        map.removeLayer(routeLine);
-      }
+    function showOverlay(text) {
+      mapOverlay.textContent = text;
+      mapOverlay.classList.remove("hidden");
+    }
 
+    function hideOverlay() {
+      mapOverlay.classList.add("hidden");
+    }
+
+    function drawPoint(lat, lng, status) {
+      const point = [Number(lat), Number(lng)];
+      routePoints.push(point);
+
+      if (routeLine) map.removeLayer(routeLine);
       routeLine = L.polyline(routePoints, {
         color: "blue",
         weight: 5,
         opacity: 0.82
       }).addTo(map);
-    }
 
-    function plotPoint(lat, lng, status) {
-      const point = [lat, lng];
-      routePoints.push(point);
-      drawRoute();
+      if (marker) map.removeLayer(marker);
+      marker = L.marker(point).addTo(map);
 
-      if (currentMarker) {
-        map.removeLayer(currentMarker);
-      }
-
-      let chosenIcon = currentIcon;
-      if (status === "start") chosenIcon = startIcon;
-      if (status === "stop") chosenIcon = stopIcon;
-
-      currentMarker = L.marker(point, { icon: chosenIcon }).addTo(map);
       map.setView(point, 18);
-
       latestCoordsText.textContent = `${Number(lat).toFixed(6)}, ${Number(lng).toFixed(6)}`;
 
       if (status === "start") trackingStateText.textContent = "Tracking started";
-      else if (status === "tracking") trackingStateText.textContent = "Tracking in progress";
       else if (status === "stop") trackingStateText.textContent = "Tracking stopped";
       else trackingStateText.textContent = "Tracking in progress";
+
+      hideOverlay();
+      setTimeout(() => map.invalidateSize(), 150);
     }
 
     async function searchStudent() {
@@ -447,12 +345,12 @@
 
       currentRoll = roll;
       studentRollText.textContent = roll;
-      trackingStateText.textContent = "Checking tracking state...";
+      trackingStateText.textContent = "Checking...";
       latestCoordsText.textContent = "Loading...";
       facultyStatusText.textContent = `Searching tracking data for ${roll}...`;
 
-      clearMapState();
-      map.setView([20.5937, 78.9629], 5);
+      resetMap();
+      showOverlay("Checking tracking status...");
 
       try {
         const response = await fetch(`/location-history/${encodeURIComponent(roll)}`);
@@ -462,25 +360,27 @@
           trackingStateText.textContent = "Tracking has not started";
           latestCoordsText.textContent = "No coordinates yet";
           facultyStatusText.textContent = `No tracking data found for ${roll}.`;
+          showOverlay("Tracking has not started");
           return;
         }
 
         result.data.forEach((item) => {
-          plotPoint(item.latitude, item.longitude, item.status);
+          drawPoint(item.latitude, item.longitude, item.status);
         });
 
-        facultyStatusText.textContent = `Showing live tracking for ${roll}.`;
+        facultyStatusText.textContent = `Showing tracking data for ${roll}.`;
         socket.emit("joinParentRoom", roll);
       } catch (error) {
         trackingStateText.textContent = "Tracking has not started";
         latestCoordsText.textContent = "No coordinates yet";
         facultyStatusText.textContent = "Could not fetch tracking data.";
+        showOverlay("Tracking has not started");
       }
     }
 
     searchBtn.addEventListener("click", searchStudent);
 
-    rollInput.addEventListener("keydown", function (e) {
+    rollInput.addEventListener("keydown", (e) => {
       if (e.key === "Enter") {
         e.preventDefault();
         searchStudent();
@@ -492,7 +392,7 @@
       if (data.roll !== currentRoll) return;
 
       facultyStatusText.textContent = `Live update received for ${currentRoll}.`;
-      plotPoint(data.lat, data.lng, data.status);
+      drawPoint(data.lat, data.lng, data.status);
     });
   </script>
 </body>
