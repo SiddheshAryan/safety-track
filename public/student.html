@@ -3,77 +3,271 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Faculty Registration</title>
-  <link rel="stylesheet" href="style.css" />
+  <title>Student Dashboard</title>
+  <script src="/socket.io/socket.io.js"></script>
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Arial, Helvetica, sans-serif;
+      background: linear-gradient(135deg, #b8e3d3 0%, #c5ddf0 100%);
+      padding: 24px 16px 80px;
+      color: #123a47;
+    }
+
+    .page {
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    .card {
+      background: rgba(255, 255, 255, 0.78);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.45);
+      border-radius: 28px;
+      box-shadow: 0 18px 50px rgba(16, 55, 72, 0.14);
+      padding: 32px;
+    }
+
+    .top-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin-bottom: 22px;
+    }
+
+    .title {
+      margin: 0;
+      font-size: 2.6rem;
+      font-weight: 800;
+      color: #055f6b;
+      letter-spacing: -0.03em;
+    }
+
+    .subtitle {
+      margin: 8px 0 0;
+      color: #56737b;
+      font-size: 1rem;
+    }
+
+    .logout-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 130px;
+      padding: 12px 18px;
+      border-radius: 14px;
+      text-decoration: none;
+      font-weight: 700;
+      color: #2f6fb8;
+      background: rgba(255,255,255,0.9);
+      border: 1px solid rgba(76, 142, 217, 0.18);
+    }
+
+    .info-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 16px;
+      margin-bottom: 22px;
+    }
+
+    .info-box {
+      background: rgba(255,255,255,0.82);
+      border-radius: 18px;
+      padding: 18px;
+      border: 1px solid rgba(76, 142, 217, 0.12);
+    }
+
+    .info-box strong {
+      display: block;
+      margin-bottom: 8px;
+      color: #0b5d69;
+    }
+
+    .actions {
+      display: flex;
+      gap: 14px;
+      flex-wrap: wrap;
+      margin-bottom: 18px;
+    }
+
+    button {
+      border: none;
+      border-radius: 14px;
+      font-weight: 700;
+      font-size: 15px;
+      color: white;
+      padding: 14px 22px;
+      background: linear-gradient(135deg, #4c8ed9, #2f6fb8);
+      cursor: pointer;
+      box-shadow: 0 14px 28px rgba(76, 142, 217, 0.25);
+    }
+
+    button.secondary {
+      background: #5b6b73;
+      box-shadow: none;
+    }
+
+    .status {
+      margin-top: 12px;
+      font-weight: 700;
+      color: #244a57;
+      min-height: 22px;
+    }
+
+    .footer-credit {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 12px;
+      text-align: center;
+      font-size: 0.96rem;
+      font-weight: 700;
+      color: #1a4655;
+    }
+
+    @media (max-width: 900px) {
+      .info-grid { grid-template-columns: 1fr; }
+    }
+  </style>
 </head>
 <body>
-  <div class="page-center">
-    <div class="card slide-in">
-      <h2 class="page-title" style="text-align:center; margin-bottom: 10px;">Faculty Registration</h2>
-      <p class="page-subtitle" style="text-align:center; margin-bottom: 22px;">
-        Register faculty access for the safety tracker system.
-      </p>
-
-      <form id="facultyRegisterForm">
-        <label for="name">Faculty Name</label>
-        <input type="text" id="name" placeholder="Enter faculty name" required />
-
-        <label for="subject">Subject</label>
-        <input type="text" id="subject" placeholder="Enter subject" />
-
-        <label for="mobile">Mobile Number</label>
-        <input type="text" id="mobile" placeholder="Enter mobile number" />
-
-        <button type="submit">Register Faculty</button>
-      </form>
-
-      <div class="button-row" style="margin-top: 16px;">
-        <a href="select-role.html?mode=register" class="secondary-btn">Back</a>
+  <div class="page">
+    <div class="card">
+      <div class="top-row">
+        <div>
+          <h1 class="title">Student Dashboard</h1>
+          <p class="subtitle">Start or stop live location sharing.</p>
+        </div>
+        <a href="/index.html" class="logout-btn">Logout</a>
       </div>
 
-      <p id="message" class="message" style="text-align:center;"></p>
+      <div class="info-grid">
+        <div class="info-box">
+          <strong>Roll Number</strong>
+          <span id="rollText">Loading...</span>
+        </div>
+        <div class="info-box">
+          <strong>Tracking Status</strong>
+          <span id="trackingText">Not started</span>
+        </div>
+        <div class="info-box">
+          <strong>Latest Coordinates</strong>
+          <span id="coordsText">No coordinates yet</span>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button id="startBtn">Start Tracking</button>
+        <button id="stopBtn" class="secondary">Stop Tracking</button>
+      </div>
+
+      <div class="status" id="statusText">Waiting to start tracking...</div>
     </div>
   </div>
 
   <div class="footer-credit">Designed by R Siddhesh Aryan</div>
 
   <script>
-    const form = document.getElementById("facultyRegisterForm");
-    const message = document.getElementById("message");
+    const socket = io();
+    const params = new URLSearchParams(window.location.search);
+    const roll = params.get("roll");
 
-    form.addEventListener("submit", async function (e) {
-      e.preventDefault();
+    const rollText = document.getElementById("rollText");
+    const trackingText = document.getElementById("trackingText");
+    const coordsText = document.getElementById("coordsText");
+    const statusText = document.getElementById("statusText");
+    const startBtn = document.getElementById("startBtn");
+    const stopBtn = document.getElementById("stopBtn");
 
-      const payload = {
-        name: document.getElementById("name").value.trim(),
-        subject: document.getElementById("subject").value.trim(),
-        mobile: document.getElementById("mobile").value.trim()
-      };
+    let watchId = null;
+    let lastLat = null;
+    let lastLng = null;
 
-      try {
-        const response = await fetch("/register/faculty", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify(payload)
-        });
+    if (!roll) {
+      rollText.textContent = "No roll number found";
+      statusText.textContent = "Please login again.";
+      startBtn.disabled = true;
+      stopBtn.disabled = true;
+    } else {
+      rollText.textContent = roll;
+    }
 
-        const result = await response.json();
+    function emitLocation(lat, lng, status) {
+      socket.emit("locationUpdate", {
+        roll,
+        lat,
+        lng,
+        status
+      });
+      coordsText.textContent = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+    }
 
-        if (result.success) {
-          message.textContent = "Faculty registered successfully.";
-          form.reset();
+    startBtn.addEventListener("click", () => {
+      if (!roll) return;
 
-          setTimeout(() => {
-            window.location.href = `faculty.html?name=${encodeURIComponent(payload.name)}`;
-          }, 900);
-        } else {
-          message.textContent = result.message || "Faculty registration failed.";
-        }
-      } catch (error) {
-        message.textContent = "Server error. Please try again.";
+      if (!navigator.geolocation) {
+        statusText.textContent = "Geolocation not supported.";
+        return;
       }
+
+      if (watchId !== null) {
+        statusText.textContent = "Tracking already running.";
+        return;
+      }
+
+      statusText.textContent = "Starting tracking...";
+
+      watchId = navigator.geolocation.watchPosition(
+        (position) => {
+          const lat = position.coords.latitude;
+          const lng = position.coords.longitude;
+          const first = lastLat === null || lastLng === null;
+
+          lastLat = lat;
+          lastLng = lng;
+
+          if (first) {
+            emitLocation(lat, lng, "start");
+            trackingText.textContent = "Tracking started";
+            statusText.textContent = "Tracking started successfully.";
+          } else {
+            emitLocation(lat, lng, "tracking");
+            trackingText.textContent = "Tracking in progress";
+            statusText.textContent = "Live tracking in progress...";
+          }
+        },
+        () => {
+          statusText.textContent = "Unable to get location.";
+        },
+        {
+          enableHighAccuracy: true,
+          maximumAge: 0,
+          timeout: 10000
+        }
+      );
+    });
+
+    stopBtn.addEventListener("click", () => {
+      if (watchId === null) {
+        statusText.textContent = "Tracking is not running.";
+        return;
+      }
+
+      navigator.geolocation.clearWatch(watchId);
+      watchId = null;
+
+      if (lastLat !== null && lastLng !== null) {
+        emitLocation(lastLat, lastLng, "stop");
+      }
+
+      trackingText.textContent = "Tracking stopped";
+      statusText.textContent = "Tracking stopped.";
     });
   </script>
 </body>
