@@ -192,9 +192,10 @@
 
     let watchId = null;
     let lastAccepted = null;
+    let hasStarted = false;
 
-    const MIN_MOVEMENT_METERS = 12;
-    const MAX_ACCEPTABLE_ACCURACY_METERS = 40;
+    const MIN_MOVEMENT_METERS = 15;
+    const MAX_ACCEPTABLE_ACCURACY_METERS = 200;
 
     if (!roll) {
       rollText.textContent = "No roll number found";
@@ -221,16 +222,18 @@
       return R * c;
     }
 
-    function emitLocation(lat, lng, status, accuracy) {
+    function updateDisplay(lat, lng, accuracy) {
+      coordsText.textContent = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+      accuracyText.textContent = `${Math.round(accuracy)} m`;
+    }
+
+    function emitLocation(lat, lng, status) {
       socket.emit("locationUpdate", {
         roll,
         lat,
         lng,
         status
       });
-
-      coordsText.textContent = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
-      accuracyText.textContent = `${Math.round(accuracy)} m`;
     }
 
     startBtn.addEventListener("click", () => {
@@ -247,7 +250,9 @@
       }
 
       lastAccepted = null;
-      statusText.textContent = "Starting tracking...";
+      hasStarted = false;
+      trackingText.textContent = "Starting...";
+      statusText.textContent = "Getting GPS location...";
 
       watchId = navigator.geolocation.watchPosition(
         (position) => {
@@ -258,13 +263,15 @@
           accuracyText.textContent = `${Math.round(accuracy)} m`;
 
           if (accuracy > MAX_ACCEPTABLE_ACCURACY_METERS) {
-            statusText.textContent = `Ignoring weak GPS reading (${Math.round(accuracy)} m accuracy).`;
+            statusText.textContent = `Weak GPS reading (${Math.round(accuracy)} m). Waiting for better signal...`;
             return;
           }
 
           if (!lastAccepted) {
             lastAccepted = { lat, lng, accuracy };
-            emitLocation(lat, lng, "start", accuracy);
+            updateDisplay(lat, lng, accuracy);
+            emitLocation(lat, lng, "start");
+            hasStarted = true;
             trackingText.textContent = "Tracking started";
             statusText.textContent = "Tracking started successfully.";
             return;
@@ -273,13 +280,15 @@
           const moved = distanceMeters(lastAccepted.lat, lastAccepted.lng, lat, lng);
 
           if (moved < MIN_MOVEMENT_METERS) {
-            statusText.textContent = `Still at same place. Ignored ${moved.toFixed(1)} m drift.`;
-            coordsText.textContent = `${lastAccepted.lat.toFixed(6)}, ${lastAccepted.lng.toFixed(6)}`;
+            updateDisplay(lastAccepted.lat, lastAccepted.lng, lastAccepted.accuracy);
+            trackingText.textContent = "Tracking in progress";
+            statusText.textContent = `No major movement detected. Ignored ${moved.toFixed(1)} m drift.`;
             return;
           }
 
           lastAccepted = { lat, lng, accuracy };
-          emitLocation(lat, lng, "tracking", accuracy);
+          updateDisplay(lat, lng, accuracy);
+          emitLocation(lat, lng, "tracking");
           trackingText.textContent = "Tracking in progress";
           statusText.textContent = `Movement accepted: ${moved.toFixed(1)} m`;
         },
@@ -295,7 +304,7 @@
         {
           enableHighAccuracy: true,
           maximumAge: 0,
-          timeout: 12000
+          timeout: 15000
         }
       );
     });
@@ -309,8 +318,9 @@
       navigator.geolocation.clearWatch(watchId);
       watchId = null;
 
-      if (lastAccepted) {
-        emitLocation(lastAccepted.lat, lastAccepted.lng, "stop", lastAccepted.accuracy || 0);
+      if (lastAccepted && hasStarted) {
+        emitLocation(lastAccepted.lat, lastAccepted.lng, "stop");
+        updateDisplay(lastAccepted.lat, lastAccepted.lng, lastAccepted.accuracy || 0);
       }
 
       trackingText.textContent = "Tracking stopped";
