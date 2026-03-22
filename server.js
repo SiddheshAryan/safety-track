@@ -3,6 +3,7 @@ const http = require("http");
 const path = require("path");
 const { Pool } = require("pg");
 const { Server } = require("socket.io");
+const crypto = require("crypto");
 
 const app = express();
 const server = http.createServer(app);
@@ -58,17 +59,18 @@ async function initDB() {
     CREATE TABLE IF NOT EXISTS locations(
       id SERIAL PRIMARY KEY,
       roll TEXT,
+      session_id TEXT,
       latitude DOUBLE PRECISION,
       longitude DOUBLE PRECISION,
       status TEXT,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
   `);
-
-  console.log("Database ready");
 }
 
 initDB().catch(console.error);
+
+const activeSessions = new Map();
 
 /* ---------------- REGISTER ---------------- */
 
@@ -149,7 +151,6 @@ app.post("/register-faculty", async (req, res) => {
 app.post("/login/student", async (req, res) => {
   try {
     const { roll, password } = req.body;
-
     const result = await pool.query(
       `SELECT * FROM students WHERE roll_number = $1 AND password = $2`,
       [roll, password]
@@ -161,7 +162,6 @@ app.post("/login/student", async (req, res) => {
 
     res.json({ success: true });
   } catch (err) {
-    console.error("Student login error:", err.message);
     res.json({ success: false, message: "Login failed" });
   }
 });
@@ -169,7 +169,6 @@ app.post("/login/student", async (req, res) => {
 app.post("/login/parent", async (req, res) => {
   try {
     const { student_roll, password } = req.body;
-
     const result = await pool.query(
       `SELECT * FROM parents WHERE student_roll = $1 AND password = $2`,
       [student_roll, password]
@@ -181,7 +180,6 @@ app.post("/login/parent", async (req, res) => {
 
     res.json({ success: true });
   } catch (err) {
-    console.error("Parent login error:", err.message);
     res.json({ success: false, message: "Login failed" });
   }
 });
@@ -189,7 +187,6 @@ app.post("/login/parent", async (req, res) => {
 app.post("/login/faculty", async (req, res) => {
   try {
     const { faculty_id, password } = req.body;
-
     const result = await pool.query(
       `SELECT * FROM faculty WHERE faculty_id = $1 AND password = $2`,
       [faculty_id, password]
@@ -201,19 +198,18 @@ app.post("/login/faculty", async (req, res) => {
 
     res.json({ success: true });
   } catch (err) {
-    console.error("Faculty login error:", err.message);
     res.json({ success: false, message: "Login failed" });
   }
 });
 
 /* ---------------- TRACKING API ---------------- */
 
-app.get("/location/:roll", async (req, res) => {
+app.get("/current-session/:roll", async (req, res) => {
   try {
     const { roll } = req.params;
 
-    const result = await pool.query(
-      `SELECT roll, latitude, longitude, status, created_at
+    const latest = await pool.query(
+      `SELECT session_id
        FROM locations
        WHERE roll = $1
        ORDER BY created_at DESC
@@ -221,41 +217,37 @@ app.get("/location/:roll", async (req, res) => {
       [roll]
     );
 
-    if (result.rows.length === 0) {
-      return res.json({ success: false, message: "No location found" });
+    if (latest.rows.length === 0) {
+      return res.json({ success: false, message: "No tracking started" });
     }
 
-    res.json({ success: true, data: result.rows[0] });
-  } catch (err) {
-    console.error("Latest location error:", err.message);
-    res.json({ success: false, message: "Could not fetch location" });
-  }
-});
+    const sessionId = latest.rows[0].session_id;
 
-app.get("/location-history/:roll", async (req, res) => {
-  try {
-    const { roll } = req.params;
-
-    const result = await pool.query(
-      `SELECT latitude, longitude, status, created_at
+    const history = await pool.query(
+      `SELECT latitude, longitude, status, created_at, session_id
        FROM locations
-       WHERE roll = $1
+       WHERE roll = $1 AND session_id = $2
        ORDER BY created_at ASC`,
-      [roll]
+      [roll, sessionId]
     );
 
-    res.json({ success: true, data: result.rows });
+    const started = history.rows.find(r => r.status === "start");
+
+    res.json({
+      success: true,
+      session_id: sessionId,
+      started_at: started ? started.created_at : history.rows[0].created_at,
+      data: history.rows
+    });
   } catch (err) {
-    console.error("Location history error:", err.message);
-    res.json({ success: false, message: "Could not fetch history" });
+    console.error("Current session error:", err.message);
+    res.json({ success: false, message: "Could not fetch session" });
   }
 });
 
 /* ---------------- SOCKET.IO ---------------- */
 
 io.on("connection", (socket) => {
-  console.log("Socket connected:", socket.id);
-
   socket.on("joinParentRoom", (roll) => {
     socket.join(`roll_${roll}`);
   });
@@ -263,28 +255,39 @@ io.on("connection", (socket) => {
   socket.on("locationUpdate", async (data) => {
     try {
       const { roll, lat, lng, status } = data;
-
       if (!roll || lat === undefined || lng === undefined) return;
 
+      let sessionId = activeSessions.get(roll);
+
+      if (status === "start" || !sessionId) {
+        sessionId = crypto.randomUUID();
+        activeSessions.set(roll, sessionId);
+      }
+
+      if (status === "stop" && !sessionId) {
+        sessionId = crypto.randomUUID();
+      }
+
       await pool.query(
-        `INSERT INTO locations(roll, latitude, longitude, status)
-         VALUES ($1,$2,$3,$4)`,
-        [roll, lat, lng, status || "tracking"]
+        `INSERT INTO locations(roll, session_id, latitude, longitude, status)
+         VALUES ($1,$2,$3,$4,$5)`,
+        [roll, sessionId, lat, lng, status || "tracking"]
       );
 
       io.to(`roll_${roll}`).emit("locationReceive", {
         roll,
         lat,
         lng,
-        status: status || "tracking"
+        status: status || "tracking",
+        session_id: sessionId
       });
+
+      if (status === "stop") {
+        activeSessions.delete(roll);
+      }
     } catch (err) {
       console.error("locationUpdate error:", err.message);
     }
-  });
-
-  socket.on("disconnect", () => {
-    console.log("Socket disconnected:", socket.id);
   });
 });
 
