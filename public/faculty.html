@@ -28,7 +28,6 @@
     .card {
       background: rgba(255, 255, 255, 0.78);
       backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
       border: 1px solid rgba(255, 255, 255, 0.45);
       border-radius: 28px;
       box-shadow: 0 18px 50px rgba(16, 55, 72, 0.14);
@@ -76,7 +75,7 @@
     .info-grid,
     .summary-grid {
       display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
+      grid-template-columns: repeat(4, minmax(0, 1fr));
       gap: 16px;
     }
 
@@ -199,7 +198,7 @@
       <div class="top-row">
         <div>
           <h1 class="title">Faculty Dashboard</h1>
-          <p class="subtitle">Search a student by roll number and monitor live tracking.</p>
+          <p class="subtitle">Search a student by roll number and monitor only the latest tracking session.</p>
         </div>
         <a href="/index.html" class="logout-btn">Logout</a>
       </div>
@@ -217,12 +216,16 @@
           <strong>Mode</strong>
           <span>Student Live Tracking</span>
         </div>
+        <div class="info-box">
+          <strong>Started At</strong>
+          <span id="startedAtText">Not started</span>
+        </div>
       </div>
     </div>
 
     <div class="card">
       <h2 class="section-title">Search Student</h2>
-      <p class="section-text">Enter a student roll number to check the current tracking state.</p>
+      <p class="section-text">Enter a student roll number to check the current tracking session.</p>
 
       <div class="search-row">
         <input type="text" id="rollInput" placeholder="Enter student roll number" />
@@ -246,6 +249,10 @@
           <strong>Latest Coordinates</strong>
           <span id="latestCoordsText">No coordinates yet</span>
         </div>
+        <div class="info-box">
+          <strong>Session ID</strong>
+          <span id="sessionIdText">No session</span>
+        </div>
       </div>
 
       <div class="map-shell">
@@ -263,15 +270,18 @@
     const params = new URLSearchParams(window.location.search);
     const facultyId = params.get("faculty_id");
 
-    document.getElementById("facultyIdText").textContent = facultyId || "Not provided";
-
+    const facultyIdText = document.getElementById("facultyIdText");
     const rollInput = document.getElementById("rollInput");
     const searchBtn = document.getElementById("searchBtn");
     const facultyStatusText = document.getElementById("facultyStatusText");
     const studentRollText = document.getElementById("studentRollText");
     const trackingStateText = document.getElementById("trackingStateText");
     const latestCoordsText = document.getElementById("latestCoordsText");
+    const startedAtText = document.getElementById("startedAtText");
+    const sessionIdText = document.getElementById("sessionIdText");
     const mapOverlay = document.getElementById("mapOverlay");
+
+    facultyIdText.textContent = facultyId || "Not provided";
 
     const map = L.map("map").setView([20.5937, 78.9629], 5);
 
@@ -283,23 +293,33 @@
     setTimeout(() => map.invalidateSize(), 300);
 
     let currentRoll = null;
-    let marker = null;
+    let currentSessionId = null;
+    let startMarker = null;
+    let currentMarker = null;
+    let stopMarker = null;
     let routeLine = null;
     let routePoints = [];
 
-    function resetMap() {
-      routePoints = [];
-      if (marker) {
-        map.removeLayer(marker);
-        marker = null;
-      }
-      if (routeLine) {
-        map.removeLayer(routeLine);
-        routeLine = null;
-      }
-      map.setView([20.5937, 78.9629], 5);
-      setTimeout(() => map.invalidateSize(), 150);
-    }
+    const startIcon = L.divIcon({
+      className: "",
+      html: `<div style="width:18px;height:18px;background:#22c55e;border:3px solid white;border-radius:50%;box-shadow:0 0 10px rgba(0,0,0,0.35);"></div>`,
+      iconSize: [18, 18],
+      iconAnchor: [9, 9]
+    });
+
+    const currentIcon = L.divIcon({
+      className: "",
+      html: `<div style="width:18px;height:18px;background:#2563eb;border:3px solid white;border-radius:50%;box-shadow:0 0 10px rgba(0,0,0,0.35);"></div>`,
+      iconSize: [18, 18],
+      iconAnchor: [9, 9]
+    });
+
+    const stopIcon = L.divIcon({
+      className: "",
+      html: `<div style="width:18px;height:18px;background:#ef4444;border:3px solid white;border-radius:50%;box-shadow:0 0 10px rgba(0,0,0,0.35);"></div>`,
+      iconSize: [18, 18],
+      iconAnchor: [9, 9]
+    });
 
     function showOverlay(text) {
       mapOverlay.textContent = text;
@@ -310,29 +330,66 @@
       mapOverlay.classList.add("hidden");
     }
 
+    function clearSessionMap() {
+      routePoints = [];
+      if (startMarker) { map.removeLayer(startMarker); startMarker = null; }
+      if (currentMarker) { map.removeLayer(currentMarker); currentMarker = null; }
+      if (stopMarker) { map.removeLayer(stopMarker); stopMarker = null; }
+      if (routeLine) { map.removeLayer(routeLine); routeLine = null; }
+
+      trackingStateText.textContent = "Tracking has not started";
+      latestCoordsText.textContent = "No coordinates yet";
+      startedAtText.textContent = "Not started";
+      sessionIdText.textContent = "No session";
+
+      map.setView([20.5937, 78.9629], 5);
+      setTimeout(() => map.invalidateSize(), 120);
+    }
+
+    function redrawRoute() {
+      if (routeLine) map.removeLayer(routeLine);
+      if (routePoints.length > 0) {
+        routeLine = L.polyline(routePoints, {
+          color: "#2563eb",
+          weight: 5,
+          opacity: 0.85
+        }).addTo(map);
+      }
+    }
+
+    function formatDateTime(value) {
+      const d = new Date(value);
+      return d.toLocaleString();
+    }
+
     function drawPoint(lat, lng, status) {
       const point = [Number(lat), Number(lng)];
-      routePoints.push(point);
 
-      if (routeLine) map.removeLayer(routeLine);
-      routeLine = L.polyline(routePoints, {
-        color: "blue",
-        weight: 5,
-        opacity: 0.82
-      }).addTo(map);
+      if (status === "start") {
+        routePoints = [point];
+        if (startMarker) map.removeLayer(startMarker);
+        if (currentMarker) { map.removeLayer(currentMarker); currentMarker = null; }
+        if (stopMarker) { map.removeLayer(stopMarker); stopMarker = null; }
 
-      if (marker) map.removeLayer(marker);
-      marker = L.marker(point).addTo(map);
+        startMarker = L.marker(point, { icon: startIcon }).addTo(map).bindPopup("Start Point");
+        trackingStateText.textContent = "Tracking started";
+      } else if (status === "tracking") {
+        routePoints.push(point);
+        if (currentMarker) map.removeLayer(currentMarker);
+        currentMarker = L.marker(point, { icon: currentIcon }).addTo(map).bindPopup("Current Location");
+        trackingStateText.textContent = "Tracking in progress";
+      } else if (status === "stop") {
+        routePoints.push(point);
+        if (stopMarker) map.removeLayer(stopMarker);
+        stopMarker = L.marker(point, { icon: stopIcon }).addTo(map).bindPopup("Destination / Stop Point");
+        trackingStateText.textContent = "Tracking stopped";
+      }
 
-      map.setView(point, 18);
+      redrawRoute();
       latestCoordsText.textContent = `${Number(lat).toFixed(6)}, ${Number(lng).toFixed(6)}`;
-
-      if (status === "start") trackingStateText.textContent = "Tracking started";
-      else if (status === "stop") trackingStateText.textContent = "Tracking stopped";
-      else trackingStateText.textContent = "Tracking in progress";
-
       hideOverlay();
-      setTimeout(() => map.invalidateSize(), 150);
+      map.setView(point, 18);
+      setTimeout(() => map.invalidateSize(), 120);
     }
 
     async function searchStudent() {
@@ -345,34 +402,32 @@
 
       currentRoll = roll;
       studentRollText.textContent = roll;
-      trackingStateText.textContent = "Checking...";
-      latestCoordsText.textContent = "Loading...";
-      facultyStatusText.textContent = `Searching tracking data for ${roll}...`;
+      facultyStatusText.textContent = `Checking latest session for ${roll}...`;
 
-      resetMap();
+      clearSessionMap();
       showOverlay("Checking tracking status...");
 
       try {
-        const response = await fetch(`/location-history/${encodeURIComponent(roll)}`);
+        const response = await fetch(`/current-session/${encodeURIComponent(roll)}`);
         const result = await response.json();
 
         if (!result.success || !result.data || result.data.length === 0) {
-          trackingStateText.textContent = "Tracking has not started";
-          latestCoordsText.textContent = "No coordinates yet";
-          facultyStatusText.textContent = `No tracking data found for ${roll}.`;
+          facultyStatusText.textContent = `No active session data found for ${roll}.`;
           showOverlay("Tracking has not started");
           return;
         }
+
+        currentSessionId = result.session_id;
+        sessionIdText.textContent = currentSessionId;
+        startedAtText.textContent = formatDateTime(result.started_at);
 
         result.data.forEach((item) => {
           drawPoint(item.latitude, item.longitude, item.status);
         });
 
-        facultyStatusText.textContent = `Showing tracking data for ${roll}.`;
+        facultyStatusText.textContent = `Showing latest session for ${roll}.`;
         socket.emit("joinParentRoom", roll);
       } catch (error) {
-        trackingStateText.textContent = "Tracking has not started";
-        latestCoordsText.textContent = "No coordinates yet";
         facultyStatusText.textContent = "Could not fetch tracking data.";
         showOverlay("Tracking has not started");
       }
@@ -390,6 +445,17 @@
     socket.on("locationReceive", (data) => {
       if (!currentRoll) return;
       if (data.roll !== currentRoll) return;
+
+      if (data.status === "start") {
+        currentSessionId = data.session_id;
+        sessionIdText.textContent = currentSessionId;
+        startedAtText.textContent = new Date().toLocaleString();
+        clearSessionMap();
+        sessionIdText.textContent = currentSessionId;
+        startedAtText.textContent = new Date().toLocaleString();
+      }
+
+      if (currentSessionId && data.session_id !== currentSessionId) return;
 
       facultyStatusText.textContent = `Live update received for ${currentRoll}.`;
       drawPoint(data.lat, data.lng, data.status);
