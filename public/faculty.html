@@ -348,7 +348,8 @@
 
     function redrawRoute() {
       if (routeLine) map.removeLayer(routeLine);
-      if (routePoints.length > 0) {
+
+      if (routePoints.length >= 3) {
         routeLine = L.polyline(routePoints, {
           color: "#2563eb",
           weight: 5,
@@ -448,8 +449,6 @@
 
       if (data.status === "start") {
         currentSessionId = data.session_id;
-        sessionIdText.textContent = currentSessionId;
-        startedAtText.textContent = new Date().toLocaleString();
         clearSessionMap();
         sessionIdText.textContent = currentSessionId;
         startedAtText.textContent = new Date().toLocaleString();
