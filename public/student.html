@@ -71,7 +71,7 @@
 
     .info-grid {
       display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
+      grid-template-columns: repeat(4, minmax(0, 1fr));
       gap: 16px;
       margin-bottom: 22px;
     }
@@ -160,6 +160,10 @@
           <strong>Latest Coordinates</strong>
           <span id="coordsText">No coordinates yet</span>
         </div>
+        <div class="info-box">
+          <strong>GPS Accuracy</strong>
+          <span id="accuracyText">No reading yet</span>
+        </div>
       </div>
 
       <div class="actions">
@@ -181,13 +185,16 @@
     const rollText = document.getElementById("rollText");
     const trackingText = document.getElementById("trackingText");
     const coordsText = document.getElementById("coordsText");
+    const accuracyText = document.getElementById("accuracyText");
     const statusText = document.getElementById("statusText");
     const startBtn = document.getElementById("startBtn");
     const stopBtn = document.getElementById("stopBtn");
 
     let watchId = null;
-    let lastLat = null;
-    let lastLng = null;
+    let lastAccepted = null;
+
+    const MIN_MOVEMENT_METERS = 12;
+    const MAX_ACCEPTABLE_ACCURACY_METERS = 40;
 
     if (!roll) {
       rollText.textContent = "No roll number found";
@@ -198,14 +205,32 @@
       rollText.textContent = roll;
     }
 
-    function emitLocation(lat, lng, status) {
+    function toRad(value) {
+      return (value * Math.PI) / 180;
+    }
+
+    function distanceMeters(lat1, lon1, lat2, lon2) {
+      const R = 6371000;
+      const dLat = toRad(lat2 - lat1);
+      const dLon = toRad(lon2 - lon1);
+      const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+        Math.sin(dLon / 2) * Math.sin(dLon / 2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      return R * c;
+    }
+
+    function emitLocation(lat, lng, status, accuracy) {
       socket.emit("locationUpdate", {
         roll,
         lat,
         lng,
         status
       });
+
       coordsText.textContent = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+      accuracyText.textContent = `${Math.round(accuracy)} m`;
     }
 
     startBtn.addEventListener("click", () => {
@@ -221,34 +246,56 @@
         return;
       }
 
+      lastAccepted = null;
       statusText.textContent = "Starting tracking...";
 
       watchId = navigator.geolocation.watchPosition(
         (position) => {
           const lat = position.coords.latitude;
           const lng = position.coords.longitude;
-          const first = lastLat === null || lastLng === null;
+          const accuracy = position.coords.accuracy || 9999;
 
-          lastLat = lat;
-          lastLng = lng;
+          accuracyText.textContent = `${Math.round(accuracy)} m`;
 
-          if (first) {
-            emitLocation(lat, lng, "start");
+          if (accuracy > MAX_ACCEPTABLE_ACCURACY_METERS) {
+            statusText.textContent = `Ignoring weak GPS reading (${Math.round(accuracy)} m accuracy).`;
+            return;
+          }
+
+          if (!lastAccepted) {
+            lastAccepted = { lat, lng, accuracy };
+            emitLocation(lat, lng, "start", accuracy);
             trackingText.textContent = "Tracking started";
             statusText.textContent = "Tracking started successfully.";
-          } else {
-            emitLocation(lat, lng, "tracking");
-            trackingText.textContent = "Tracking in progress";
-            statusText.textContent = "Live tracking in progress...";
+            return;
           }
+
+          const moved = distanceMeters(lastAccepted.lat, lastAccepted.lng, lat, lng);
+
+          if (moved < MIN_MOVEMENT_METERS) {
+            statusText.textContent = `Still at same place. Ignored ${moved.toFixed(1)} m drift.`;
+            coordsText.textContent = `${lastAccepted.lat.toFixed(6)}, ${lastAccepted.lng.toFixed(6)}`;
+            return;
+          }
+
+          lastAccepted = { lat, lng, accuracy };
+          emitLocation(lat, lng, "tracking", accuracy);
+          trackingText.textContent = "Tracking in progress";
+          statusText.textContent = `Movement accepted: ${moved.toFixed(1)} m`;
         },
-        () => {
-          statusText.textContent = "Unable to get location.";
+        (error) => {
+          if (error.code === error.PERMISSION_DENIED) {
+            statusText.textContent = "Location permission denied.";
+          } else if (error.code === error.TIMEOUT) {
+            statusText.textContent = "Location request timed out.";
+          } else {
+            statusText.textContent = "Unable to get location.";
+          }
         },
         {
           enableHighAccuracy: true,
           maximumAge: 0,
-          timeout: 10000
+          timeout: 12000
         }
       );
     });
@@ -262,8 +309,8 @@
       navigator.geolocation.clearWatch(watchId);
       watchId = null;
 
-      if (lastLat !== null && lastLng !== null) {
-        emitLocation(lastLat, lastLng, "stop");
+      if (lastAccepted) {
+        emitLocation(lastAccepted.lat, lastAccepted.lng, "stop", lastAccepted.accuracy || 0);
       }
 
       trackingText.textContent = "Tracking stopped";
