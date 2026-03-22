@@ -71,7 +71,7 @@
 
     .info-grid {
       display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
+      grid-template-columns: repeat(4, minmax(0, 1fr));
       gap: 16px;
       margin-bottom: 18px;
     }
@@ -116,6 +116,7 @@
       color: #45616a;
       background: rgba(238, 244, 247, 0.88);
       z-index: 500;
+      padding: 20px;
     }
 
     .hidden {
@@ -145,7 +146,7 @@
       <div class="top-row">
         <div>
           <h1 class="title">Parent Dashboard</h1>
-          <p class="subtitle">Track your child’s start point, current position, and destination.</p>
+          <p class="subtitle">Track your child’s current session from start point to destination.</p>
         </div>
         <a href="/index.html" class="logout-btn">Logout</a>
       </div>
@@ -162,6 +163,10 @@
         <div class="info-box">
           <strong>Latest Coordinates</strong>
           <span id="coordsText">No coordinates yet</span>
+        </div>
+        <div class="info-box">
+          <strong>Started At</strong>
+          <span id="startedAtText">Not started</span>
         </div>
       </div>
 
@@ -182,6 +187,7 @@
     const rollText = document.getElementById("rollText");
     const statusText = document.getElementById("statusText");
     const coordsText = document.getElementById("coordsText");
+    const startedAtText = document.getElementById("startedAtText");
     const overlay = document.getElementById("overlay");
 
     rollText.textContent = roll || "No roll number";
@@ -195,6 +201,7 @@
 
     setTimeout(() => map.invalidateSize(), 300);
 
+    let currentSessionId = null;
     let startMarker = null;
     let currentMarker = null;
     let stopMarker = null;
@@ -231,6 +238,19 @@
       overlay.classList.add("hidden");
     }
 
+    function clearSessionMap() {
+      routePoints = [];
+      if (startMarker) { map.removeLayer(startMarker); startMarker = null; }
+      if (currentMarker) { map.removeLayer(currentMarker); currentMarker = null; }
+      if (stopMarker) { map.removeLayer(stopMarker); stopMarker = null; }
+      if (routeLine) { map.removeLayer(routeLine); routeLine = null; }
+      coordsText.textContent = "No coordinates yet";
+      statusText.textContent = "Tracking has not started";
+      startedAtText.textContent = "Not started";
+      map.setView([20.5937, 78.9629], 5);
+      setTimeout(() => map.invalidateSize(), 120);
+    }
+
     function redrawRoute() {
       if (routeLine) map.removeLayer(routeLine);
       if (routePoints.length > 0) {
@@ -240,6 +260,11 @@
           opacity: 0.85
         }).addTo(map);
       }
+    }
+
+    function formatDateTime(value) {
+      const d = new Date(value);
+      return d.toLocaleString();
     }
 
     function drawPoint(lat, lng, status) {
@@ -272,21 +297,25 @@
       setTimeout(() => map.invalidateSize(), 120);
     }
 
-    async function loadHistory() {
+    async function loadCurrentSession() {
       if (!roll) {
         showOverlay("Tracking has not started");
         return;
       }
 
       try {
-        const response = await fetch(`/location-history/${encodeURIComponent(roll)}`);
+        const response = await fetch(`/current-session/${encodeURIComponent(roll)}`);
         const result = await response.json();
 
         if (!result.success || !result.data || result.data.length === 0) {
+          clearSessionMap();
           showOverlay("Tracking has not started");
-          statusText.textContent = "Tracking has not started";
           return;
         }
+
+        currentSessionId = result.session_id;
+        clearSessionMap();
+        startedAtText.textContent = formatDateTime(result.started_at);
 
         result.data.forEach((item) => {
           drawPoint(item.latitude, item.longitude, item.status);
@@ -294,17 +323,26 @@
 
         socket.emit("joinParentRoom", roll);
       } catch (error) {
+        clearSessionMap();
         showOverlay("Tracking has not started");
-        statusText.textContent = "Tracking has not started";
       }
     }
 
     socket.on("locationReceive", (data) => {
       if (data.roll !== roll) return;
+
+      if (data.status === "start") {
+        currentSessionId = data.session_id;
+        clearSessionMap();
+        startedAtText.textContent = new Date().toLocaleString();
+      }
+
+      if (currentSessionId && data.session_id !== currentSessionId) return;
+
       drawPoint(data.lat, data.lng, data.status);
     });
 
-    loadHistory();
+    loadCurrentSession();
   </script>
 </body>
 </html>
